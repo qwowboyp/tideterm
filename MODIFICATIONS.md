@@ -90,6 +90,10 @@ TideTerm is **not affiliated with** and **not endorsed by** the upstream authors
   - Drag local files from OS file managers into a directory preview to upload to the current directory
   - Added right-click action **Upload Files...** in directory view
   - Added cross-platform native path extraction fallbacks (macOS/Linux/Windows) for reliable upload source resolution
+- Directory preview copy/paste workflow:
+  - Added right-click actions **Copy File/Folder** and **Paste** for directory blocks
+  - Supports copying entries across local/remote directory views using existing filecopy RPC flow
+  - When pasting into the same directory, auto-generates duplicate names (`copy`, `copy 2`, etc.) to avoid overwriting the source
 - Output coalescing/buffering improvements to reduce visible flicker for tools that rapidly rewrite status lines (especially over remote connections with packet fragmentation)
 - Added/expanded settings to help with rendering/performance troubleshooting:
   - `term:disablewebgl`
@@ -168,6 +172,9 @@ The following modules are key implementation entry points for TideTerm fork feat
 - Directory preview local uploads
   - `frontend/app/view/preview/preview-directory.tsx`
   - `frontend/app/view/preview/directorypreview.scss`
+  - `frontend/app/i18n/i18n-core.ts`
+- Directory preview copy/paste entries
+  - `frontend/app/view/preview/preview-directory.tsx`
   - `frontend/app/i18n/i18n-core.ts`
 - MCP server manager (UI + config sync)
   - `frontend/app/view/waveconfig/mcpcontent.tsx`

@@ -28,6 +28,7 @@ For release-friendly fork delta notes (including copyable release summary text),
   - [tmux Session Manager](#tmux-session-manager)
 - [Drag & Drop Paths into Terminal](#drag--drop-paths-into-terminal)
 - [Upload Local Files to Directory Blocks](#upload-local-files-to-directory-blocks)
+- [Copy & Paste Files in Directory Blocks](#copy--paste-files-in-directory-blocks)
 - [Open Current Directory in a New Block](#open-current-directory-in-a-new-block)
 - [Window Titles (Auto / Rename)](#window-titles-auto--rename)
 - [MCP Server Manager](#mcp-server-manager)
@@ -47,6 +48,7 @@ For release-friendly fork delta notes (including copyable release summary text),
 - **`wsh` CLI**: control TideTerm workspace and move files between local/remote
 - **Multi-session terminal blocks**: run/switch multiple terminals in one terminal block
 - **Directory file upload workflow**: drag local files or use right-click upload into local/remote directory blocks
+- **Directory copy/paste workflow**: right-click copy/paste files and folders in local/remote directory blocks
 - **Built-in MCP server manager**: import/sync for Claude Code / Codex CLI / Gemini CLI
 - **API Proxy (WaveProxy)**: multi-channel AI proxy with metrics/history for Claude / Codex / Gemini clients
 - **English + Simplified Chinese UI** with instant switching (no restart)
@@ -71,6 +73,7 @@ For release-friendly fork delta notes (including copyable release summary text),
 - In a **Files** block, you can browse folders and right-click for actions (open preview, open terminal, download, rename, etc.).
 - For remote hosts, TideTerm can browse the remote filesystem and open a remote editor/preview in new blocks.
 - In directory view, you can upload local files by drag & drop or by right-clicking and choosing **Upload Files...**.
+- In directory view, you can also copy a file/folder and paste it into another directory block (or clone it in place).
 
 ### Remote workflow basics
 
@@ -183,6 +186,21 @@ Behavior notes:
 - Multiple files are supported in one action.
 - The upload target is the directory currently opened in that block.
 - Works across macOS / Linux / Windows as the source platform.
+
+## Copy & Paste Files in Directory Blocks
+
+TideTerm supports file/folder copy-paste directly in directory blocks for both local and remote views.
+
+How to use:
+
+- Right-click a file/folder row and choose **Copy File/Folder**.
+- Right-click the target directory area and choose **Paste**.
+
+Behavior notes:
+
+- Paste target is the directory currently opened in that block.
+- Works across local and remote directory blocks.
+- When pasting into the same directory, TideTerm creates a duplicate name automatically (`copy`, `copy 2`, etc.).
 
 ## Open Current Directory in a New Block
 
