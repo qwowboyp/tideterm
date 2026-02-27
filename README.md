@@ -27,6 +27,7 @@ For release-friendly fork delta notes (including copyable release summary text),
   - [Multi-Session Terminals (Single Block)](#multi-session-terminals-single-block)
   - [tmux Session Manager](#tmux-session-manager)
 - [Drag & Drop Paths into Terminal](#drag--drop-paths-into-terminal)
+- [Upload Local Files to Directory Blocks](#upload-local-files-to-directory-blocks)
 - [Open Current Directory in a New Block](#open-current-directory-in-a-new-block)
 - [Window Titles (Auto / Rename)](#window-titles-auto--rename)
 - [MCP Server Manager](#mcp-server-manager)
@@ -45,6 +46,7 @@ For release-friendly fork delta notes (including copyable release summary text),
 - **Command Blocks**: isolate a command into its own block for monitoring
 - **`wsh` CLI**: control TideTerm workspace and move files between local/remote
 - **Multi-session terminal blocks**: run/switch multiple terminals in one terminal block
+- **Directory file upload workflow**: drag local files or use right-click upload into local/remote directory blocks
 - **Built-in MCP server manager**: import/sync for Claude Code / Codex CLI / Gemini CLI
 - **API Proxy (WaveProxy)**: multi-channel AI proxy with metrics/history for Claude / Codex / Gemini clients
 - **English + Simplified Chinese UI** with instant switching (no restart)
@@ -68,6 +70,7 @@ For release-friendly fork delta notes (including copyable release summary text),
 
 - In a **Files** block, you can browse folders and right-click for actions (open preview, open terminal, download, rename, etc.).
 - For remote hosts, TideTerm can browse the remote filesystem and open a remote editor/preview in new blocks.
+- In directory view, you can upload local files by drag & drop or by right-clicking and choosing **Upload Files...**.
 
 ### Remote workflow basics
 
@@ -165,6 +168,21 @@ Local terminal (macOS Finder → TideTerm local terminal):
 Remote terminal (remote Files block → remote terminal block):
 
 - Drop remote files/folders into a remote terminal block to insert remote paths.
+
+## Upload Local Files to Directory Blocks
+
+TideTerm supports uploading local files directly into a directory block (including remote directory blocks over SSH/WSL).
+
+How to upload:
+
+- Drag one or more files from Finder / Explorer / file manager into the directory list area.
+- Right-click in the directory view and choose **Upload Files...**.
+
+Behavior notes:
+
+- Multiple files are supported in one action.
+- The upload target is the directory currently opened in that block.
+- Works across macOS / Linux / Windows as the source platform.
 
 ## Open Current Directory in a New Block
 

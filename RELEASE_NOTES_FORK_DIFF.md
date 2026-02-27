@@ -7,7 +7,7 @@
 - 上游项目：`wavetermdev/waveterm`
 - 上游基线提交：`90011a7ede0931046f4c0843e9af027dcea8eefe`（2025-12-22）
 - 当前 fork 版本参考：`v0.13.1-tideterm.3`（main 分支最新提交）
-- 说明日期：2026-02-23
+- 说明日期：2026-02-27
 
 ## 2) 本 Fork 的主要新增功能
 
@@ -111,6 +111,29 @@
 - `pkg/util/shellutil/shellintegration/fish_wavefish.sh`
 - `pkg/util/shellutil/shellintegration/pwsh_wavepwsh.sh`
 
+### 2.8 目录块本地文件上传（Local File Upload in Directory View）
+
+- 支持把本地文件从 Finder/Explorer/文件管理器直接拖拽到目录块进行上传。
+- 目录视图右键菜单新增 **上传文件...**，可通过文件选择器上传。
+- 同一套上传路径适用于本地目录块和远程目录块（SSH/WSL 连接下上传到当前远程目录）。
+- 增强跨平台路径解析，兼容 macOS / Linux / Windows 的本地文件来源。
+
+代码落点：
+
+- `frontend/app/view/preview/preview-directory.tsx`
+- `frontend/app/view/preview/directorypreview.scss`
+- `frontend/app/i18n/i18n-core.ts`
+
+### 2.9 终端重连恢复与多会话字体修复
+
+- 改进终端块重连恢复流程：重连后强制同步块状态，修复“显示已重连但终端不可点击/不可输入，需重开块”的问题。
+- 修复多会话终端字体调整作用域：字体大小改动按当前激活会话生效，避免错误写入父块导致会话间设置错位。
+
+代码落点：
+
+- `frontend/app/block/blockframe.tsx`
+- `frontend/app/view/term/term-model.ts`
+
 ## 3) 默认值与发行行为变化
 
 - 品牌/标识改为 TideTerm（`name`、`productName`、`appId`）。
@@ -137,7 +160,7 @@
 ## 5) 建议对外声明（可直接引用）
 
 TideTerm is an independent fork of Wave Terminal (Apache-2.0).
-This fork adds multi-session terminal blocks, built-in API Proxy (WaveProxy), MCP server management for Claude/Codex/Gemini, remote tmux session management, bilingual UI (English/简体中文), and several remote connection robustness improvements.
+This fork adds multi-session terminal blocks, built-in API Proxy (WaveProxy), MCP server management for Claude/Codex/Gemini, remote tmux session management, directory-view local file uploads, bilingual UI (English/简体中文), and several remote connection robustness improvements.
 
 ## 6) GitHub Release 可复制摘要
 
@@ -147,6 +170,9 @@ This fork adds multi-session terminal blocks, built-in API Proxy (WaveProxy), MC
 - 新增远程 tmux 会话管理（Attach/Force Attach/Rename/Kill/Kill All）
 - 新增内置 API Proxy（多通道、指标、历史、健康检查）
 - 新增 MCP Servers 管理（Claude/Codex/Gemini 导入与同步）
+- 新增目录块本地文件上传（拖拽 + 右键“上传文件...”）
+- 修复终端重连后可能出现的“已连接但不可交互”问题
+- 修复多会话终端字体调整作用域（按当前激活会话生效）
 - 增强 SSH/WSL 远程连接稳定性，统一远程安装路径为 `~/.tideterm`
 - 默认值调整：遥测关闭、自动更新关闭、远程 tmux 续连开启
 
@@ -156,5 +182,8 @@ This fork adds multi-session terminal blocks, built-in API Proxy (WaveProxy), MC
 - Added remote tmux session manager (Attach / Force Attach / Rename / Kill / Kill All)
 - Added built-in API Proxy (WaveProxy) with channels, metrics, history, and health checks
 - Added MCP server manager with import/sync for Claude Code / Codex CLI / Gemini CLI
+- Added local file upload in directory view (drag-drop + right-click Upload Files...)
+- Fixed a reconnect recovery issue where terminals could appear reconnected but remain non-interactive
+- Fixed multi-session terminal font-size scope so changes apply to the active session
 - Improved SSH/WSL remote robustness and standardized helper path to `~/.tideterm`
 - Changed defaults: telemetry off, auto-update off, remote tmux resume on

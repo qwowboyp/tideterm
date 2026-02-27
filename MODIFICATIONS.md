@@ -77,6 +77,7 @@ TideTerm is **not affiliated with** and **not endorsed by** the upstream authors
 
 - Added route self-heal logic for connected SSH sessions: if the `conn:*` route is missing, TideTerm re-checks/re-enables `wsh` and waits for route re-registration instead of failing remote block operations immediately.
 - Added clearer connserver termination diagnostics for `SIGKILL` / exit code `137` (common OOM/resource-limit case), including actionable hints for server-side checks.
+- Improved reconnect recovery for terminal blocks by forcing a block-state resync after reconnect, fixing cases where reconnect looked successful but terminal input/click interactions were stuck until reopening the block.
 
 ### 5) Terminal UX improvements
 
@@ -85,6 +86,10 @@ TideTerm is **not affiliated with** and **not endorsed by** the upstream authors
   - Remote Files block → remote terminal
   - Multiple items inserted space-separated with shell-safe quoting where appropriate
   - Focus handling improved so the terminal receives input focus after drop
+- Directory preview local upload workflow:
+  - Drag local files from OS file managers into a directory preview to upload to the current directory
+  - Added right-click action **Upload Files...** in directory view
+  - Added cross-platform native path extraction fallbacks (macOS/Linux/Windows) for reliable upload source resolution
 - Output coalescing/buffering improvements to reduce visible flicker for tools that rapidly rewrite status lines (especially over remote connections with packet fragmentation)
 - Added/expanded settings to help with rendering/performance troubleshooting:
   - `term:disablewebgl`
@@ -101,6 +106,7 @@ TideTerm is **not affiliated with** and **not endorsed by** the upstream authors
   - Per-session kill actions
   - Resizable width with persistence (`term:sessionlistwidth` metadata)
 - New sessions inherit connection and current directory from the active session to keep workflow continuity
+- Fixed terminal font-size context menu behavior in multi-session mode so `term:fontsize` is applied/read from the active session (instead of always using the parent block), which resolves per-session mismatch issues.
 
 ### 7) Window title / window switcher UX
 
@@ -157,6 +163,12 @@ The following modules are key implementation entry points for TideTerm fork feat
   - `frontend/app/view/term/term.tsx`
   - `pkg/waveobj/metaconsts.go`
   - `pkg/waveobj/wtypemeta.go`
+- Reconnect recovery (terminal interactivity after reconnect)
+  - `frontend/app/block/blockframe.tsx`
+- Directory preview local uploads
+  - `frontend/app/view/preview/preview-directory.tsx`
+  - `frontend/app/view/preview/directorypreview.scss`
+  - `frontend/app/i18n/i18n-core.ts`
 - MCP server manager (UI + config sync)
   - `frontend/app/view/waveconfig/mcpcontent.tsx`
   - `pkg/mcpconfig/service.go`
