@@ -732,6 +732,18 @@ export class TermViewModel implements ViewModel {
         prtn.catch((e) => console.log("error controller resync (force restart)", e));
     }
 
+    private getSettingsTargetBlockId(blockData: Block | null): string {
+        if (blockData?.meta?.[TermMultiSessionKey_IsSession]) {
+            return this.blockId;
+        }
+        const activeSessionId = this.getActiveTermSessionId(blockData);
+        const sessionIds = this.getTermSessionIds(blockData);
+        if (activeSessionId && sessionIds.includes(activeSessionId)) {
+            return activeSessionId;
+        }
+        return this.blockId;
+    }
+
     getSettingsMenuItems(): ContextMenuItem[] {
         const lang = getAppLanguageFromSettings(globalStore.get(atoms.settingsAtom));
         const tt = (key: Parameters<typeof t>[1], vars?: Record<string, string | number>) => t(lang, key, vars);
@@ -743,7 +755,10 @@ export class TermViewModel implements ViewModel {
         const defaultAllowBracketedPaste = globalStore.get(getSettingsKeyAtom("term:allowbracketedpaste")) ?? true;
         const transparencyMeta = globalStore.get(getBlockMetaKeyAtom(this.blockId, "term:transparency"));
         const blockData = globalStore.get(this.blockAtom);
-        const overrideFontSize = blockData?.meta?.["term:fontsize"];
+        const settingsTargetBlockId = this.getSettingsTargetBlockId(blockData);
+        const settingsTargetBlockAtom = WOS.getWaveObjectAtom<Block>(WOS.makeORef("block", settingsTargetBlockId));
+        const settingsTargetBlockData = globalStore.get(settingsTargetBlockAtom);
+        const overrideFontSize = settingsTargetBlockData?.meta?.["term:fontsize"];
 
         termThemeKeys.sort((a, b) => {
             return (termThemes[a]["display:order"] ?? 0) - (termThemes[b]["display:order"] ?? 0);
@@ -806,7 +821,7 @@ export class TermViewModel implements ViewModel {
                     checked: overrideFontSize == fontSize,
                     click: () => {
                         RpcApi.SetMetaCommand(TabRpcClient, {
-                            oref: WOS.makeORef("block", this.blockId),
+                            oref: WOS.makeORef("block", settingsTargetBlockId),
                             meta: { "term:fontsize": fontSize },
                         });
                     },
@@ -819,7 +834,7 @@ export class TermViewModel implements ViewModel {
             checked: overrideFontSize == null,
             click: () => {
                 RpcApi.SetMetaCommand(TabRpcClient, {
-                    oref: WOS.makeORef("block", this.blockId),
+                    oref: WOS.makeORef("block", settingsTargetBlockId),
                     meta: { "term:fontsize": null },
                 });
             },
