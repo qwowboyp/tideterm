@@ -47,6 +47,93 @@ import { type PreviewModel } from "./preview-model";
 
 const PageJumpSize = 20;
 
+type ClipboardFileItem = {
+    srcUri: string;
+    sourceDir: string;
+    sourceConn: string;
+    name: string;
+    isDir: boolean;
+};
+
+const fileClipboardAtom = atom<ClipboardFileItem[] | null>(null);
+
+function trimTrailingSlashes(path: string): string {
+    if (!path) {
+        return "";
+    }
+    if (path === "/" || /^[a-zA-Z]:\/$/.test(path)) {
+        return path;
+    }
+    return path.replace(/\/+$/, "");
+}
+
+function normalizeComparablePath(path: string): string {
+    const trimmed = trimTrailingSlashes(path);
+    return trimmed.length > 0 ? trimmed : "/";
+}
+
+function getPathBaseName(path: string): string {
+    const cleaned = trimTrailingSlashes(path);
+    const idx = cleaned.lastIndexOf("/");
+    if (idx < 0) {
+        return cleaned;
+    }
+    return cleaned.slice(idx + 1);
+}
+
+function getParentPath(path: string): string {
+    const cleaned = trimTrailingSlashes(path);
+    if (cleaned === "/" || cleaned === "~" || /^[a-zA-Z]:\/$/.test(cleaned)) {
+        return cleaned;
+    }
+    const idx = cleaned.lastIndexOf("/");
+    if (idx < 0) {
+        return "";
+    }
+    if (/^[a-zA-Z]:\//.test(cleaned) && idx === 2) {
+        return cleaned.slice(0, 3);
+    }
+    if (idx === 0) {
+        return "/";
+    }
+    return cleaned.slice(0, idx);
+}
+
+function joinPath(parent: string, child: string): string {
+    if (!parent) {
+        return child;
+    }
+    if (parent === "/") {
+        return `/${child}`;
+    }
+    if (/^[a-zA-Z]:\/$/.test(parent)) {
+        return `${parent}${child}`;
+    }
+    if (parent.endsWith("/")) {
+        return `${parent}${child}`;
+    }
+    return `${parent}/${child}`;
+}
+
+function splitNameAndExt(name: string): { stem: string; ext: string } {
+    const lastDot = name.lastIndexOf(".");
+    if (lastDot <= 0) {
+        return { stem: name, ext: "" };
+    }
+    return {
+        stem: name.slice(0, lastDot),
+        ext: name.slice(lastDot),
+    };
+}
+
+function makeCopyName(name: string, copyIndex: number): string {
+    const { stem, ext } = splitNameAndExt(name);
+    if (copyIndex <= 1) {
+        return `${stem} copy${ext}`;
+    }
+    return `${stem} copy ${copyIndex}${ext}`;
+}
+
 function dataTransferHasFiles(dt: DataTransfer | null): boolean {
     if (!dt) {
         return false;
@@ -166,6 +253,9 @@ declare module "@tanstack/react-table" {
         newFile: () => void;
         newDirectory: () => void;
         uploadFiles: () => void;
+        copyEntry: (finfo: FileInfo) => void;
+        pasteEntries: () => Promise<void>;
+        canPasteEntries: () => boolean;
     }
 }
 
@@ -182,6 +272,9 @@ interface DirectoryTableProps {
     newFile: () => void;
     newDirectory: () => void;
     uploadFiles: () => void;
+    copyEntry: (finfo: FileInfo) => void;
+    pasteEntries: () => Promise<void>;
+    canPasteEntries: () => boolean;
 }
 
 const columnHelper = createColumnHelper<FileInfo>();
@@ -199,6 +292,9 @@ function DirectoryTable({
     newFile,
     newDirectory,
     uploadFiles,
+    copyEntry,
+    pasteEntries,
+    canPasteEntries,
 }: DirectoryTableProps) {
     const searchActive = useAtomValue(model.directorySearchActive);
     const fullConfig = useAtomValue(atoms.fullConfigAtom);
@@ -324,6 +420,9 @@ function DirectoryTable({
             newFile,
             newDirectory,
             uploadFiles,
+            copyEntry,
+            pasteEntries,
+            canPasteEntries,
         },
     });
 
@@ -462,7 +561,8 @@ function TableBody({
             if (finfo == null) {
                 return;
             }
-            const fileName = finfo.path.split("/").pop();
+            const fileName = getPathBaseName(finfo.path);
+            const canCopyEntry = fileName.length > 0 && fileName !== "..";
             const menu: ContextMenuItem[] = [
                 {
                     label: t("filemenu.newFile"),
@@ -487,6 +587,21 @@ function TableBody({
                     click: () => {
                         table.options.meta.updateName(finfo.path, finfo.isdir);
                     },
+                },
+                {
+                    label: t("filemenu.copyEntry"),
+                    enabled: canCopyEntry,
+                    click: () => {
+                        if (!canCopyEntry) {
+                            return;
+                        }
+                        table.options.meta.copyEntry(finfo);
+                    },
+                },
+                {
+                    label: t("filemenu.pasteEntry"),
+                    enabled: table.options.meta.canPasteEntries(),
+                    click: () => fireAndForget(() => table.options.meta.pasteEntries()),
                 },
                 {
                     type: "separator",
@@ -675,6 +790,7 @@ function DirectoryPreview({ model }: DirectoryPreviewProps) {
     const blockData = useAtomValue(model.blockAtom);
     const finfo = useAtomValue(model.statFile);
     const dirPath = finfo?.path;
+    const [fileClipboard, setFileClipboard] = useAtom(fileClipboardAtom);
     const setErrorMsg = useSetAtom(model.errorMsgAtom);
     const uploadInputRef = useRef<HTMLInputElement>(null);
 
@@ -860,6 +976,114 @@ function DirectoryPreview({ model }: DirectoryPreviewProps) {
             model.refreshCallback();
         },
         [model.refreshCallback]
+    );
+
+    const copyEntryToClipboard = useCallback(
+        (entry: FileInfo) => {
+            if (!entry?.path) {
+                return;
+            }
+            const entryName = entry.name || getPathBaseName(entry.path);
+            if (!entryName || entryName === "..") {
+                return;
+            }
+            const entryConn = conn ?? "local";
+            setFileClipboard([
+                {
+                    srcUri: formatRemoteUri(entry.path, conn),
+                    sourceDir: getParentPath(entry.path),
+                    sourceConn: entryConn,
+                    name: entryName,
+                    isDir: !!entry.isdir,
+                },
+            ]);
+        },
+        [conn, setFileClipboard]
+    );
+
+    const canPasteEntries = useCallback((): boolean => {
+        return (fileClipboard?.length ?? 0) > 0;
+    }, [fileClipboard]);
+
+    const pathExists = useCallback(
+        async (path: string): Promise<boolean> => {
+            const formattedPath = await model.formatRemoteUri(path, globalStore.get);
+            const info = await RpcApi.FileInfoCommand(TabRpcClient, { info: { path: formattedPath } }, null);
+            return info != null && !info.notfound;
+        },
+        [model.formatRemoteUri]
+    );
+
+    const findNextDuplicatePath = useCallback(
+        async (directoryPath: string, sourceName: string): Promise<string> => {
+            for (let copyIndex = 1; copyIndex <= 999; copyIndex++) {
+                const nextName = makeCopyName(sourceName, copyIndex);
+                const candidatePath = joinPath(directoryPath, nextName);
+                if (!(await pathExists(candidatePath))) {
+                    return candidatePath;
+                }
+            }
+            throw new Error(`Unable to create duplicate path for "${sourceName}"`);
+        },
+        [pathExists]
+    );
+
+    const pasteEntriesIntoDirectory = useCallback(
+        async () => {
+            try {
+                if (!canPasteEntries()) {
+                    return;
+                }
+                if (!dirPath) {
+                    setErrorMsg({
+                        status: "Paste Failed",
+                        text: "Cannot resolve destination directory.",
+                        level: "error",
+                    });
+                    return;
+                }
+                const clipboardItems = fileClipboard ?? [];
+                const timeoutYear = 31536000000; // one year
+                const currentConn = conn ?? "local";
+                const normalizedDestDir = normalizeComparablePath(dirPath);
+                const destinationDirUri = await model.formatRemoteUri(dirPath, globalStore.get);
+
+                for (const item of clipboardItems) {
+                    let desturi = destinationDirUri;
+                    const sameDirectory =
+                        item.sourceConn === currentConn && normalizeComparablePath(item.sourceDir) === normalizedDestDir;
+                    if (sameDirectory) {
+                        const duplicatePath = await findNextDuplicatePath(dirPath, item.name);
+                        desturi = await model.formatRemoteUri(duplicatePath, globalStore.get);
+                    }
+                    const data: CommandFileCopyData = {
+                        srcuri: item.srcUri,
+                        desturi,
+                        opts: {
+                            timeout: timeoutYear,
+                            recursive: true,
+                        },
+                    };
+                    await handleDropCopy(data, item.isDir);
+                }
+            } catch (e) {
+                setErrorMsg({
+                    status: "Paste Failed",
+                    text: `${e}`,
+                    level: "error",
+                });
+            }
+        },
+        [
+            canPasteEntries,
+            conn,
+            dirPath,
+            fileClipboard,
+            findNextDuplicatePath,
+            handleDropCopy,
+            model.formatRemoteUri,
+            setErrorMsg,
+        ]
     );
 
     const uploadLocalPaths = useCallback(
@@ -1051,6 +1275,11 @@ function DirectoryPreview({ model }: DirectoryPreviewProps) {
                     },
                 },
                 {
+                    label: t("filemenu.pasteEntry"),
+                    enabled: canPasteEntries(),
+                    click: () => fireAndForget(pasteEntriesIntoDirectory),
+                },
+                {
                     type: "separator",
                 },
             ];
@@ -1058,7 +1287,18 @@ function DirectoryPreview({ model }: DirectoryPreviewProps) {
 
             ContextMenuModel.showContextMenu(menu, e);
         },
-        [setRefreshVersion, conn, newFile, newDirectory, dirPath, finfo, t, handleUploadFilesClick]
+        [
+            setRefreshVersion,
+            conn,
+            newFile,
+            newDirectory,
+            dirPath,
+            finfo,
+            t,
+            canPasteEntries,
+            pasteEntriesIntoDirectory,
+            handleUploadFilesClick,
+        ]
     );
 
     return (
@@ -1093,6 +1333,9 @@ function DirectoryPreview({ model }: DirectoryPreviewProps) {
                     newFile={newFile}
                     newDirectory={newDirectory}
                     uploadFiles={handleUploadFilesClick}
+                    copyEntry={copyEntryToClipboard}
+                    pasteEntries={pasteEntriesIntoDirectory}
+                    canPasteEntries={canPasteEntries}
                 />
             </div>
             {entryManagerProps && (
