@@ -47,6 +47,93 @@ import { type PreviewModel } from "./preview-model";
 
 const PageJumpSize = 20;
 
+function dataTransferHasFiles(dt: DataTransfer | null): boolean {
+    if (!dt) {
+        return false;
+    }
+    try {
+        const types = Array.from((dt.types as any) ?? []);
+        if (types.includes("Files") || types.includes("text/uri-list")) {
+            return true;
+        }
+    } catch (_) {}
+    try {
+        const items = Array.from((dt.items as any) ?? []);
+        if (items.some((i: any) => i?.kind === "file")) {
+            return true;
+        }
+    } catch (_) {}
+    return dt.files != null && dt.files.length > 0;
+}
+
+function nativeFileUrlToPath(fileUrl: string): string | null {
+    try {
+        const url = new URL(fileUrl);
+        if (url.protocol !== "file:") {
+            return null;
+        }
+        let path = decodeURIComponent(url.pathname || "");
+        if (path.startsWith("//")) {
+            path = path.slice(1);
+        }
+        if (/^\/[a-zA-Z]:\//.test(path)) {
+            path = path.slice(1);
+        }
+        return path || null;
+    } catch (_) {
+        return null;
+    }
+}
+
+function extractNativeFilePathsFromFiles(files: File[] | FileList): string[] {
+    const fileList = Array.from(files ?? []);
+    const fromFilePath = fileList.map((f: any) => (typeof f?.path === "string" ? f.path : "")).filter((p) => p.length > 0);
+    if (fromFilePath.length > 0) {
+        return fromFilePath;
+    }
+    try {
+        const api = getApi();
+        const getPathForFile = (api as any)?.getPathForFile;
+        if (typeof getPathForFile === "function") {
+            const fromApi = fileList
+                .map((f) => {
+                    try {
+                        return String(getPathForFile(f) ?? "");
+                    } catch (_) {
+                        return "";
+                    }
+                })
+                .filter((p) => p.length > 0);
+            if (fromApi.length > 0) {
+                return fromApi;
+            }
+        }
+    } catch (_) {}
+    return [];
+}
+
+function extractNativeFilePaths(dt: DataTransfer): string[] {
+    const fromFiles = extractNativeFilePathsFromFiles(dt.files ?? []);
+    if (fromFiles.length > 0) {
+        return fromFiles;
+    }
+    try {
+        const uriList = dt.getData("text/uri-list");
+        if (uriList) {
+            const fromUriList = uriList
+                .split(/\r?\n/)
+                .map((line) => line.trim())
+                .filter((line) => line.length > 0 && !line.startsWith("#"))
+                .map(nativeFileUrlToPath)
+                .filter((p): p is string => !!p);
+            if (fromUriList.length > 0) {
+                return fromUriList;
+            }
+        }
+    } catch (_) {}
+    return [];
+}
+
 interface DirectoryTableHeaderCellProps {
     header: Header<FileInfo, unknown>;
 }
@@ -78,6 +165,7 @@ declare module "@tanstack/react-table" {
         updateName: (path: string, isDir: boolean) => void;
         newFile: () => void;
         newDirectory: () => void;
+        uploadFiles: () => void;
     }
 }
 
@@ -93,6 +181,7 @@ interface DirectoryTableProps {
     entryManagerOverlayPropsAtom: PrimitiveAtom<EntryManagerOverlayProps>;
     newFile: () => void;
     newDirectory: () => void;
+    uploadFiles: () => void;
 }
 
 const columnHelper = createColumnHelper<FileInfo>();
@@ -109,6 +198,7 @@ function DirectoryTable({
     entryManagerOverlayPropsAtom,
     newFile,
     newDirectory,
+    uploadFiles,
 }: DirectoryTableProps) {
     const searchActive = useAtomValue(model.directorySearchActive);
     const fullConfig = useAtomValue(atoms.fullConfigAtom);
@@ -233,6 +323,7 @@ function DirectoryTable({
             updateName,
             newFile,
             newDirectory,
+            uploadFiles,
         },
     });
 
@@ -383,6 +474,12 @@ function TableBody({
                     label: t("filemenu.newFolder"),
                     click: () => {
                         table.options.meta.newDirectory();
+                    },
+                },
+                {
+                    label: t("filemenu.uploadFiles"),
+                    click: () => {
+                        table.options.meta.uploadFiles();
                     },
                 },
                 {
@@ -569,6 +666,7 @@ function DirectoryPreview({ model }: DirectoryPreviewProps) {
     const t = useT();
     const [searchText, setSearchText] = useState("");
     const [focusIndex, setFocusIndex] = useState(0);
+    const [isNativeDragOver, setIsNativeDragOver] = useState(false);
     const [unfilteredData, setUnfilteredData] = useState<FileInfo[]>([]);
     const showHiddenFiles = useAtomValue(model.showHiddenFiles);
     const [selectedPath, setSelectedPath] = useState("");
@@ -578,6 +676,7 @@ function DirectoryPreview({ model }: DirectoryPreviewProps) {
     const finfo = useAtomValue(model.statFile);
     const dirPath = finfo?.path;
     const setErrorMsg = useSetAtom(model.errorMsgAtom);
+    const uploadInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         model.refreshCallback = () => {
@@ -763,6 +862,92 @@ function DirectoryPreview({ model }: DirectoryPreviewProps) {
         [model.refreshCallback]
     );
 
+    const uploadLocalPaths = useCallback(
+        async (paths: string[]) => {
+            const uniquePaths = Array.from(new Set(paths.filter((p) => typeof p === "string" && p.length > 0)));
+            if (uniquePaths.length === 0) {
+                return;
+            }
+            if (!dirPath) {
+                setErrorMsg({
+                    status: "Upload Failed",
+                    text: "Cannot resolve destination directory.",
+                    level: "error",
+                });
+                return;
+            }
+            const timeoutYear = 31536000000; // one year
+            const desturi = await model.formatRemoteUri(dirPath, globalStore.get);
+            for (const nativePath of uniquePaths) {
+                const data: CommandFileCopyData = {
+                    srcuri: formatRemoteUri(nativePath, "local"),
+                    desturi,
+                    opts: {
+                        timeout: timeoutYear,
+                        recursive: true,
+                    },
+                };
+                await handleDropCopy(data, false);
+            }
+        },
+        [dirPath, model.formatRemoteUri, handleDropCopy, setErrorMsg]
+    );
+
+    const handleUploadFilesClick = useCallback(() => {
+        uploadInputRef.current?.click();
+    }, []);
+
+    const handleUploadInputChange = useCallback(
+        async (e: React.ChangeEvent<HTMLInputElement>) => {
+            const paths = extractNativeFilePathsFromFiles(e.target.files ?? []);
+            await uploadLocalPaths(paths);
+            e.target.value = "";
+        },
+        [uploadLocalPaths]
+    );
+
+    const handleNativeDragOver = useCallback(
+        (e: React.DragEvent<HTMLDivElement>) => {
+            if (!dataTransferHasFiles(e.dataTransfer)) {
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            if (!isNativeDragOver) {
+                setIsNativeDragOver(true);
+            }
+        },
+        [isNativeDragOver]
+    );
+
+    const handleNativeDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+        if (!dataTransferHasFiles(e.dataTransfer)) {
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX;
+        const y = e.clientY;
+        if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
+            setIsNativeDragOver(false);
+        }
+    }, []);
+
+    const handleNativeDrop = useCallback(
+        async (e: React.DragEvent<HTMLDivElement>) => {
+            if (!dataTransferHasFiles(e.dataTransfer)) {
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            setIsNativeDragOver(false);
+            const paths = extractNativeFilePaths(e.dataTransfer);
+            await uploadLocalPaths(paths);
+        },
+        [uploadLocalPaths]
+    );
+
     const [, drop] = useDrop(
         () => ({
             accept: "FILE_ITEM", //a name of file drop type
@@ -860,6 +1045,12 @@ function DirectoryPreview({ model }: DirectoryPreviewProps) {
                     },
                 },
                 {
+                    label: t("filemenu.uploadFiles"),
+                    click: () => {
+                        handleUploadFilesClick();
+                    },
+                },
+                {
                     type: "separator",
                 },
             ];
@@ -867,14 +1058,15 @@ function DirectoryPreview({ model }: DirectoryPreviewProps) {
 
             ContextMenuModel.showContextMenu(menu, e);
         },
-        [setRefreshVersion, conn, newFile, newDirectory, dirPath, finfo, t]
+        [setRefreshVersion, conn, newFile, newDirectory, dirPath, finfo, t, handleUploadFilesClick]
     );
 
     return (
         <Fragment>
+            <input ref={uploadInputRef} type="file" multiple className="hidden" onChange={handleUploadInputChange} />
             <div
                 ref={refs.setReference}
-                className="dir-table-container"
+                className={clsx("dir-table-container", { "native-file-drag-over": isNativeDragOver })}
                 onChangeCapture={(e) => {
                     const event = e as React.ChangeEvent<HTMLInputElement>;
                     if (!entryManagerProps) {
@@ -882,6 +1074,9 @@ function DirectoryPreview({ model }: DirectoryPreviewProps) {
                     }
                 }}
                 {...getReferenceProps()}
+                onDragOver={handleNativeDragOver}
+                onDragLeave={handleNativeDragLeave}
+                onDrop={handleNativeDrop}
                 onContextMenu={(e) => handleFileContextMenu(e)}
                 onClick={() => setEntryManagerProps(undefined)}
             >
@@ -897,6 +1092,7 @@ function DirectoryPreview({ model }: DirectoryPreviewProps) {
                     entryManagerOverlayPropsAtom={entryManagerPropsAtom}
                     newFile={newFile}
                     newDirectory={newDirectory}
+                    uploadFiles={handleUploadFilesClick}
                 />
             </div>
             {entryManagerProps && (

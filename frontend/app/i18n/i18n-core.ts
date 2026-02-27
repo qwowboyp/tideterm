@@ -62,6 +62,7 @@ const en = {
     // File / directory context menu
     "filemenu.newFile": "New File",
     "filemenu.newFolder": "New Folder",
+    "filemenu.uploadFiles": "Upload Files...",
     "filemenu.rename": "Rename",
     "filemenu.copyFileName": "Copy File Name",
     "filemenu.copyFullFileName": "Copy Full File Name",
@@ -493,6 +494,7 @@ const zhCN: Record<I18nKey, string> = {
     // File / directory context menu
     "filemenu.newFile": "新建文件",
     "filemenu.newFolder": "新建文件夹",
+    "filemenu.uploadFiles": "上传文件...",
     "filemenu.rename": "重命名",
     "filemenu.copyFileName": "复制文件名",
     "filemenu.copyFullFileName": "复制完整路径",
