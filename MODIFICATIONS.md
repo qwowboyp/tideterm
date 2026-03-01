@@ -79,6 +79,13 @@ TideTerm is **not affiliated with** and **not endorsed by** the upstream authors
 - Added clearer connserver termination diagnostics for `SIGKILL` / exit code `137` (common OOM/resource-limit case), including actionable hints for server-side checks.
 - Improved reconnect recovery for terminal blocks by forcing a block-state resync after reconnect, fixing cases where reconnect looked successful but terminal input/click interactions were stuck until reopening the block.
 
+#### SSH local port forwarding
+
+- Added an SSH port forwarding manager in terminal actions (create/list/delete forwards)
+- Added auto-restore for forwards after transient SSH reconnects (forwards are recreated when the SSH session reconnects)
+- Added per-connection persistence in `connections.json` (`conn:portforwards`) so user-defined forwards survive app restart
+- Added quick-open browser action in the forwarding list for local HTTP endpoints
+
 ### 5) Terminal UX improvements
 
 - Drag & drop paths into terminal input:
@@ -169,6 +176,13 @@ The following modules are key implementation entry points for TideTerm fork feat
   - `pkg/waveobj/wtypemeta.go`
 - Reconnect recovery (terminal interactivity after reconnect)
   - `frontend/app/block/blockframe.tsx`
+- SSH local port forwarding (UI + RPC + persistence)
+  - `frontend/app/modals/portforwards.tsx`
+  - `pkg/remote/conncontroller/portforward.go`
+  - `pkg/remote/conncontroller/conncontroller.go`
+  - `pkg/wshrpc/wshserver/portforward.go`
+  - `pkg/wconfig/settingsconfig.go`
+  - `schema/connections.json`
 - Directory preview local uploads
   - `frontend/app/view/preview/preview-directory.tsx`
   - `frontend/app/view/preview/directorypreview.scss`

@@ -240,6 +240,30 @@ declare global {
         errorstring?: string;
     };
 
+    // wshrpc.CommandConnPortForwardCreateData
+    type CommandConnPortForwardCreateData = {
+        connname: string;
+        localhost?: string;
+        localport: number;
+        remotehost?: string;
+        remoteport: number;
+        autorestore?: boolean;
+        logblockid?: string;
+    };
+
+    // wshrpc.CommandConnPortForwardDeleteData
+    type CommandConnPortForwardDeleteData = {
+        connname: string;
+        forwardid: string;
+        logblockid?: string;
+    };
+
+    // wshrpc.CommandConnPortForwardListData
+    type CommandConnPortForwardListData = {
+        connname: string;
+        logblockid?: string;
+    };
+
     // wshrpc.CommandControllerAppendOutputData
     type CommandControllerAppendOutputData = {
         blockid: string;
@@ -706,6 +730,7 @@ declare global {
         "conn:wshpath"?: string;
         "conn:shellpath"?: string;
         "conn:ignoresshconfig"?: boolean;
+        "conn:portforwards"?: ConnPortForward[];
         "display:hidden"?: boolean;
         "display:order"?: number;
         "term:*"?: boolean;
@@ -735,6 +760,17 @@ declare global {
         "ssh:proxyjump"?: string[];
         "ssh:userknownhostsfile"?: string[];
         "ssh:globalknownhostsfile"?: string[];
+    };
+
+    // wconfig.ConnPortForward
+    type ConnPortForward = {
+        id?: string;
+        localhost?: string;
+        localport?: number;
+        remotehost?: string;
+        remoteport?: number;
+        autorestore?: boolean;
+        createdat?: number;
     };
 
     // wshrpc.ConnRequest
@@ -1139,6 +1175,22 @@ declare global {
     type Point = {
         x: number;
         y: number;
+    };
+
+    // wshrpc.PortForwardInfo
+    type PortForwardInfo = {
+        id: string;
+        connname: string;
+        localhost: string;
+        localport: number;
+        localaddress: string;
+        remotehost: string;
+        remoteport: number;
+        remoteaddress: string;
+        autorestore: boolean;
+        status: string;
+        lasterror?: string;
+        createdat: number;
     };
 
     // wshrpc.ProxyChannel

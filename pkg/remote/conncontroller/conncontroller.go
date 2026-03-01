@@ -61,6 +61,7 @@ type SSHConn struct {
 	WshEnsuring        *atomic.Bool
 	Opts               *remote.SSHOpts
 	Client             *ssh.Client
+	PortForwards       map[string]*managedPortForward
 	DomainSockName     string // if "", then no domain socket
 	DomainSockListener net.Listener
 	ConnController     *ssh.Session
@@ -178,6 +179,7 @@ func (conn *SSHConn) Close() error {
 
 func (conn *SSHConn) close_nolock() {
 	// does not set status (that should happen at another level)
+	conn.stopAllPortForwards_nolock("connection closed")
 	if conn.DomainSockListener != nil {
 		conn.DomainSockListener.Close()
 		conn.DomainSockListener = nil
@@ -788,6 +790,8 @@ func (conn *SSHConn) Connect(ctx context.Context, connFlags *wconfig.ConnKeyword
 	if err != nil {
 		return err
 	}
+	conn.loadPersistedPortForwards(ctx)
+	conn.restorePortForwards(ctx)
 
 	// logic for saving connection and potential flags (we only save once a connection has been made successfully)
 	// at the moment, identity files is the only saved flag

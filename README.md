@@ -24,6 +24,7 @@ For release-friendly fork delta notes (including copyable release summary text),
 - [Remote Connections (SSH / WSL)](#remote-connections-ssh--wsl)
   - [wsh (Shell Extensions)](#wsh-shell-extensions)
   - [Remote Terminal Resume (tmux)](#remote-terminal-resume-tmux)
+  - [SSH Port Forwarding](#ssh-port-forwarding)
   - [Multi-Session Terminals (Single Block)](#multi-session-terminals-single-block)
   - [tmux Session Manager](#tmux-session-manager)
 - [Drag & Drop Paths into Terminal](#drag--drop-paths-into-terminal)
@@ -47,6 +48,7 @@ For release-friendly fork delta notes (including copyable release summary text),
 - **Command Blocks**: isolate a command into its own block for monitoring
 - **`wsh` CLI**: control TideTerm workspace and move files between local/remote
 - **Multi-session terminal blocks**: run/switch multiple terminals in one terminal block
+- **SSH port forwarding manager**: create/list/delete forwards, browser quick-open, and reconnect/app-restart restore
 - **Directory file upload workflow**: drag local files or use right-click upload into local/remote directory blocks
 - **Directory copy/paste workflow**: right-click copy/paste files and folders in local/remote directory blocks
 - **Built-in MCP server manager**: import/sync for Claude Code / Codex CLI / Gemini CLI
@@ -131,6 +133,27 @@ Install `tmux` (examples):
 - Fedora: `sudo dnf install -y tmux`
 - RHEL/CentOS: `sudo yum install -y tmux` (or `dnf` on newer distros)
 - Arch: `sudo pacman -S tmux`
+
+### SSH Port Forwarding
+
+For SSH connections, TideTerm includes a built-in local port forwarding manager.
+
+Entry point:
+
+- In a remote SSH terminal block, open the toolbar action for **Port Forwards**.
+
+What you can do:
+
+- Create forwards (`local host:port -> remote host:port`)
+- View running/stopped/error status and last error
+- Delete existing forwards
+- Click **Open** (globe icon) to open the local forwarded HTTP endpoint in browser/webview
+
+Recovery and persistence behavior:
+
+- If the SSH connection drops and reconnects, forwards with `Auto Restore` enabled are recreated automatically.
+- Forward definitions are persisted per connection in `connections.json` under `conn:portforwards`, so they survive app restart.
+- After app restart, reconnecting to the same SSH target will load and restore those forwards automatically.
 
 ### Multi-Session Terminals (Single Block)
 

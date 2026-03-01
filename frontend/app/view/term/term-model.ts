@@ -320,6 +320,17 @@ export class TermViewModel implements ViewModel {
             if (!isCmd && !isSession && termMode !== "vdom") {
                 const connName = blockData?.meta?.connection ?? "local";
                 const isRemoteConn = !isLocalConnectionName(connName);
+                const supportsPortForwards = isRemoteConn && !connName.startsWith("wsl://") && !connName.startsWith("aws:");
+                if (supportsPortForwards) {
+                    rtn.push({
+                        elemtype: "iconbutton",
+                        icon: "plug",
+                        title: tt("term.portForwards.openTitle"),
+                        click: () => {
+                            modalsModel.pushModal("PortForwardsModal", { blockId: this.blockId });
+                        },
+                    });
+                }
                 if (isRemoteConn) {
                     rtn.push({
                         elemtype: "iconbutton",

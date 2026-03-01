@@ -72,6 +72,21 @@ class RpcApiType {
         return client.wshRpcCall("connlistaws", null, opts);
     }
 
+    // command "connportforwardcreate" [call]
+    ConnPortForwardCreateCommand(client: WshClient, data: CommandConnPortForwardCreateData, opts?: RpcOpts): Promise<PortForwardInfo> {
+        return client.wshRpcCall("connportforwardcreate", data, opts);
+    }
+
+    // command "connportforwarddelete" [call]
+    ConnPortForwardDeleteCommand(client: WshClient, data: CommandConnPortForwardDeleteData, opts?: RpcOpts): Promise<void> {
+        return client.wshRpcCall("connportforwarddelete", data, opts);
+    }
+
+    // command "connportforwardlist" [call]
+    ConnPortForwardListCommand(client: WshClient, data: CommandConnPortForwardListData, opts?: RpcOpts): Promise<PortForwardInfo[]> {
+        return client.wshRpcCall("connportforwardlist", data, opts);
+    }
+
     // command "connreinstallwsh" [call]
     ConnReinstallWshCommand(client: WshClient, data: ConnExtData, opts?: RpcOpts): Promise<void> {
         return client.wshRpcCall("connreinstallwsh", data, opts);

@@ -145,6 +145,22 @@
 - `frontend/app/view/preview/preview-directory.tsx`
 - `frontend/app/i18n/i18n-core.ts`
 
+### 2.11 SSH 端口转发管理与持久化
+
+- 新增 SSH 连接的端口转发管理弹窗，支持创建/查看/删除转发规则。
+- 新增“浏览器打开”快捷按钮，可直接打开本地转发端口对应的 HTTP 地址。
+- 断线重连后自动恢复已启用自动恢复的端口转发。
+- 新增连接级持久化：端口转发规则写入 `connections.json` 的 `conn:portforwards`，应用重启后会自动加载并恢复，无需重新手动添加。
+
+代码落点：
+
+- `frontend/app/modals/portforwards.tsx`
+- `pkg/remote/conncontroller/portforward.go`
+- `pkg/remote/conncontroller/conncontroller.go`
+- `pkg/wshrpc/wshserver/portforward.go`
+- `pkg/wconfig/settingsconfig.go`
+- `schema/connections.json`
+
 ## 3) 默认值与发行行为变化
 
 - 品牌/标识改为 TideTerm（`name`、`productName`、`appId`）。

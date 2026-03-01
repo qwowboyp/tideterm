@@ -304,12 +304,23 @@ type FullConfigType struct {
 	ConfigErrors   []ConfigError                  `json:"configerrors" configfile:"-"`
 }
 
+type ConnPortForward struct {
+	ID          string `json:"id,omitempty"`
+	LocalHost   string `json:"localhost,omitempty"`
+	LocalPort   int    `json:"localport,omitempty"`
+	RemoteHost  string `json:"remotehost,omitempty"`
+	RemotePort  int    `json:"remoteport,omitempty"`
+	AutoRestore bool   `json:"autorestore,omitempty"`
+	CreatedAt   int64  `json:"createdat,omitempty"`
+}
+
 type ConnKeywords struct {
-	ConnWshEnabled          *bool  `json:"conn:wshenabled,omitempty"`
-	ConnAskBeforeWshInstall *bool  `json:"conn:askbeforewshinstall,omitempty"`
-	ConnWshPath             string `json:"conn:wshpath,omitempty"`
-	ConnShellPath           string `json:"conn:shellpath,omitempty"`
-	ConnIgnoreSshConfig     *bool  `json:"conn:ignoresshconfig,omitempty"`
+	ConnWshEnabled          *bool             `json:"conn:wshenabled,omitempty"`
+	ConnAskBeforeWshInstall *bool             `json:"conn:askbeforewshinstall,omitempty"`
+	ConnWshPath             string            `json:"conn:wshpath,omitempty"`
+	ConnShellPath           string            `json:"conn:shellpath,omitempty"`
+	ConnIgnoreSshConfig     *bool             `json:"conn:ignoresshconfig,omitempty"`
+	ConnPortForwards        []ConnPortForward `json:"conn:portforwards,omitempty"`
 
 	DisplayHidden *bool   `json:"display:hidden,omitempty"`
 	DisplayOrder  float32 `json:"display:order,omitempty"`

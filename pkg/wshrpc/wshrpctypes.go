@@ -119,19 +119,22 @@ const (
 	Command_RemoteGetInfo        = "remotegetinfo"
 	Command_RemoteInstallRcfiles = "remoteinstallrcfiles"
 
-	Command_ConnStatus       = "connstatus"
-	Command_WslStatus        = "wslstatus"
-	Command_ConnEnsure       = "connensure"
-	Command_ConnReinstallWsh = "connreinstallwsh"
-	Command_ConnConnect      = "connconnect"
-	Command_ConnDisconnect   = "conndisconnect"
-	Command_ConnList         = "connlist"
-	Command_ConnListAWS      = "connlistaws"
-	Command_WslList          = "wsllist"
-	Command_WslDefaultDistro = "wsldefaultdistro"
-	Command_DismissWshFail   = "dismisswshfail"
-	Command_ConnUpdateWsh    = "updatewsh"
-	Command_FindGitBash      = "findgitbash"
+	Command_ConnStatus            = "connstatus"
+	Command_WslStatus             = "wslstatus"
+	Command_ConnEnsure            = "connensure"
+	Command_ConnReinstallWsh      = "connreinstallwsh"
+	Command_ConnConnect           = "connconnect"
+	Command_ConnDisconnect        = "conndisconnect"
+	Command_ConnPortForwardCreate = "connportforwardcreate"
+	Command_ConnPortForwardList   = "connportforwardlist"
+	Command_ConnPortForwardDelete = "connportforwarddelete"
+	Command_ConnList              = "connlist"
+	Command_ConnListAWS           = "connlistaws"
+	Command_WslList               = "wsllist"
+	Command_WslDefaultDistro      = "wsldefaultdistro"
+	Command_DismissWshFail        = "dismisswshfail"
+	Command_ConnUpdateWsh         = "updatewsh"
+	Command_FindGitBash           = "findgitbash"
 
 	Command_WorkspaceList = "workspacelist"
 
@@ -301,6 +304,9 @@ type WshRpcInterface interface {
 	ConnReinstallWshCommand(ctx context.Context, data ConnExtData) error
 	ConnConnectCommand(ctx context.Context, connRequest ConnRequest) error
 	ConnDisconnectCommand(ctx context.Context, connName string) error
+	ConnPortForwardCreateCommand(ctx context.Context, data CommandConnPortForwardCreateData) (PortForwardInfo, error)
+	ConnPortForwardListCommand(ctx context.Context, data CommandConnPortForwardListData) ([]PortForwardInfo, error)
+	ConnPortForwardDeleteCommand(ctx context.Context, data CommandConnPortForwardDeleteData) error
 	ConnListCommand(ctx context.Context) ([]string, error)
 	ConnListAWSCommand(ctx context.Context) ([]string, error)
 	WslListCommand(ctx context.Context) ([]string, error)
@@ -968,6 +974,42 @@ type ActivityUpdate struct {
 type ConnExtData struct {
 	ConnName   string `json:"connname"`
 	LogBlockId string `json:"logblockid,omitempty"`
+}
+
+type CommandConnPortForwardCreateData struct {
+	ConnName    string `json:"connname"`
+	LocalHost   string `json:"localhost,omitempty"`
+	LocalPort   int    `json:"localport"`
+	RemoteHost  string `json:"remotehost,omitempty"`
+	RemotePort  int    `json:"remoteport"`
+	AutoRestore *bool  `json:"autorestore,omitempty"`
+	LogBlockId  string `json:"logblockid,omitempty"`
+}
+
+type CommandConnPortForwardListData struct {
+	ConnName   string `json:"connname"`
+	LogBlockId string `json:"logblockid,omitempty"`
+}
+
+type CommandConnPortForwardDeleteData struct {
+	ConnName   string `json:"connname"`
+	ForwardId  string `json:"forwardid"`
+	LogBlockId string `json:"logblockid,omitempty"`
+}
+
+type PortForwardInfo struct {
+	Id            string `json:"id"`
+	ConnName      string `json:"connname"`
+	LocalHost     string `json:"localhost"`
+	LocalPort     int    `json:"localport"`
+	LocalAddress  string `json:"localaddress"`
+	RemoteHost    string `json:"remotehost"`
+	RemotePort    int    `json:"remoteport"`
+	RemoteAddress string `json:"remoteaddress"`
+	AutoRestore   bool   `json:"autorestore"`
+	Status        string `json:"status"`
+	LastError     string `json:"lasterror,omitempty"`
+	CreatedAt     int64  `json:"createdat"`
 }
 
 type FetchSuggestionsData struct {

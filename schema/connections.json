@@ -18,6 +18,12 @@
         "conn:ignoresshconfig": {
           "type": "boolean"
         },
+        "conn:portforwards": {
+          "items": {
+            "$ref": "#/$defs/ConnPortForward"
+          },
+          "type": "array"
+        },
         "display:hidden": {
           "type": "boolean"
         },
@@ -122,6 +128,33 @@
             "type": "string"
           },
           "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ConnPortForward": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "localhost": {
+          "type": "string"
+        },
+        "localport": {
+          "type": "integer"
+        },
+        "remotehost": {
+          "type": "string"
+        },
+        "remoteport": {
+          "type": "integer"
+        },
+        "autorestore": {
+          "type": "boolean"
+        },
+        "createdat": {
+          "type": "integer"
         }
       },
       "additionalProperties": false,

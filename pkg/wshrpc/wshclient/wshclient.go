@@ -95,6 +95,24 @@ func ConnListAWSCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) ([]string, erro
 	return resp, err
 }
 
+// command "connportforwardcreate", wshserver.ConnPortForwardCreateCommand
+func ConnPortForwardCreateCommand(w *wshutil.WshRpc, data wshrpc.CommandConnPortForwardCreateData, opts *wshrpc.RpcOpts) (wshrpc.PortForwardInfo, error) {
+	resp, err := sendRpcRequestCallHelper[wshrpc.PortForwardInfo](w, "connportforwardcreate", data, opts)
+	return resp, err
+}
+
+// command "connportforwarddelete", wshserver.ConnPortForwardDeleteCommand
+func ConnPortForwardDeleteCommand(w *wshutil.WshRpc, data wshrpc.CommandConnPortForwardDeleteData, opts *wshrpc.RpcOpts) error {
+	_, err := sendRpcRequestCallHelper[any](w, "connportforwarddelete", data, opts)
+	return err
+}
+
+// command "connportforwardlist", wshserver.ConnPortForwardListCommand
+func ConnPortForwardListCommand(w *wshutil.WshRpc, data wshrpc.CommandConnPortForwardListData, opts *wshrpc.RpcOpts) ([]wshrpc.PortForwardInfo, error) {
+	resp, err := sendRpcRequestCallHelper[[]wshrpc.PortForwardInfo](w, "connportforwardlist", data, opts)
+	return resp, err
+}
+
 // command "connreinstallwsh", wshserver.ConnReinstallWshCommand
 func ConnReinstallWshCommand(w *wshutil.WshRpc, data wshrpc.ConnExtData, opts *wshrpc.RpcOpts) error {
 	_, err := sendRpcRequestCallHelper[any](w, "connreinstallwsh", data, opts)

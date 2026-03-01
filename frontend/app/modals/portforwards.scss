@@ -1,0 +1,154 @@
+// Copyright 2025, Command Line Inc.
+// SPDX-License-Identifier: Apache-2.0
+
+.port-forwards-modal {
+    width: 820px;
+    max-width: 94vw;
+    max-height: 82vh;
+    overflow: hidden;
+}
+
+.port-forwards-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 8px;
+    padding-right: 48px;
+}
+
+.port-forwards-title {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.port-forwards-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    word-break: break-all;
+}
+
+.port-forwards-form {
+    display: grid;
+    grid-template-columns: 140px 1fr 140px auto auto;
+    align-items: end;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.port-forwards-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.port-forwards-form label.checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding-bottom: 6px;
+}
+
+.port-forwards-form input[type="text"],
+.port-forwards-form input[type="number"] {
+    height: 32px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--main-bg-color);
+    color: var(--main-text-color);
+    padding: 0 8px;
+    font-size: 13px;
+}
+
+.port-forwards-form input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.port-forwards-form .wave-button {
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.port-forwards-list {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    max-height: 48vh;
+    overflow-y: auto;
+}
+
+.port-forward-row {
+    display: grid;
+    grid-template-columns: 1.2fr 1.2fr 0.5fr 0.6fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.port-forward-row:last-child {
+    border-bottom: none;
+}
+
+.port-forward-row.header {
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: var(--secondary-bg-color);
+}
+
+.port-forward-actions-header {
+    text-align: right;
+}
+
+.port-forward-actions {
+    display: inline-flex;
+    justify-content: flex-end;
+}
+
+.port-forward-actions .wave-button {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.port-forward-status {
+    font-weight: 600;
+}
+
+.port-forward-status.running {
+    color: var(--success-color);
+}
+
+.port-forward-status.stopped {
+    color: var(--text-muted);
+}
+
+.port-forward-status.error {
+    color: var(--error-color);
+}
+
+.port-forwards-empty {
+    padding: 16px;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.port-forwards-empty.error {
+    color: var(--error-color);
+    border-color: var(--error-color);
+}
+
+@media (max-width: 900px) {
+    .port-forwards-form {
+        grid-template-columns: 1fr 1fr;
+    }
+}
