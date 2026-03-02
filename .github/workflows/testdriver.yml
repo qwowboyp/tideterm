@@ -1,10 +1,12 @@
 name: TestDriver.ai Run
 
 on:
-    workflow_run:
-        workflows: ["TestDriver.ai Build"]
-        types:
-            - completed
+    workflow_dispatch:
+        inputs:
+            build_run_id:
+                description: "Actions run ID from TestDriver.ai Build (artifact source)"
+                required: true
+                type: string
 
 env:
     GO_VERSION: "1.24"
@@ -45,7 +47,6 @@ jobs:
     run_testdriver:
         name: Run TestDriver.ai
         runs-on: windows-latest
-        if: github.event.workflow_run.conclusion == 'success'
         steps:
             - uses: testdriverai/action@main
               id: testdriver
@@ -75,7 +76,7 @@ jobs:
 
                       # Fetch the artifact upload URL
                       Write-Host "Fetching the artifact upload URL..."
-                      $artifactUrl = (Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/artifacts" -Headers $headers).artifacts[0].archive_download_url
+                      $artifactUrl = (Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.event.inputs.build_run_id }}/artifacts" -Headers $headers).artifacts[0].archive_download_url
 
                       if ($artifactUrl) {
                           Write-Host "Artifact URL successfully fetched: $artifactUrl"
