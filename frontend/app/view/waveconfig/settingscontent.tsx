@@ -124,6 +124,17 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
                     />
                     <span className="text-sm">{t("settings.language.chinese")}</span>
                 </label>
+
+                <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                        type="radio"
+                        name="app-language"
+                        checked={lang === "zh-TW"}
+                        disabled={isUpdating}
+                        onChange={() => setLanguage("zh-TW")}
+                    />
+                    <span className="text-sm">{t("settings.language.chineseTraditional")}</span>
+                </label>
             </div>
 
             <div className="flex flex-col gap-1">
