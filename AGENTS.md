@@ -5,9 +5,11 @@
 **Branch:** main
 
 ## OVERVIEW
+
 TideTerm — open-source AI-native terminal (fork of Wave Terminal). Block-based workspace: terminals, files, previews, web, editor, AI chat. Cross-platform (macOS/Linux/Windows). Hybrid Go backend + Electron/React frontend.
 
 ## STRUCTURE
+
 ```
 tideterm/
 ├── cmd/           # Go entry points: server (wavesrv), wsh CLI, code generators
@@ -30,23 +32,23 @@ tideterm/
 
 ## WHERE TO LOOK
 
-| Task | Location | Notes |
-|------|----------|-------|
-| Add a new block type | `frontend/app/view/` | Each block type = subdirectory |
-| Modify terminal rendering | `frontend/app/view/term/` | Uses xterm.js + WebGL addon |
-| AI chat / AI panel | `frontend/app/aipanel/`, `pkg/waveai/`, `pkg/aiusechat/` | Frontend + Go backend |
-| Remote connections (SSH/WSL) | `pkg/remote/`, `pkg/wslconn/`, `pkg/wshrpc/` | wsh RPC protocol |
-| MCP server management | `pkg/mcpconfig/` | Config sync to Claude/Codex/Gemini |
-| API proxy (WaveProxy) | `pkg/waveproxy/` | Multi-channel AI proxy |
-| State management | `frontend/app/store/` | Jotai atoms |
-| i18n (translations) | `frontend/app/i18n/` | English + Simplified Chinese |
-| Electron IPC | `emain/emain-ipc.ts` | Main↔Renderer bridge |
-| Go server lifecycle | `cmd/server/main-server.go` | Bootstrap, listeners, RPC |
-| wsh CLI commands | `cmd/wsh/cmd/` | 39 Go files for CLI subcommands |
-| Config/settings | `pkg/wconfig/` | Settings model + schema generation |
-| Layout engine | `frontend/layout/` | Grid/pane layout with tests |
-| Tsunami sandbox | `tsunami/` | Own go.mod, own frontend, used for sandboxed UI blocks |
-| Database migrations | `db/migrations-wstore/` | SQLite schema evolution |
+| Task                         | Location                                                 | Notes                                                  |
+| ---------------------------- | -------------------------------------------------------- | ------------------------------------------------------ |
+| Add a new block type         | `frontend/app/view/`                                     | Each block type = subdirectory                         |
+| Modify terminal rendering    | `frontend/app/view/term/`                                | Uses xterm.js + WebGL addon                            |
+| AI chat / AI panel           | `frontend/app/aipanel/`, `pkg/waveai/`, `pkg/aiusechat/` | Frontend + Go backend                                  |
+| Remote connections (SSH/WSL) | `pkg/remote/`, `pkg/wslconn/`, `pkg/wshrpc/`             | wsh RPC protocol                                       |
+| MCP server management        | `pkg/mcpconfig/`                                         | Config sync to Claude/Codex/Gemini                     |
+| API proxy (WaveProxy)        | `pkg/waveproxy/`                                         | Multi-channel AI proxy                                 |
+| State management             | `frontend/app/store/`                                    | Jotai atoms                                            |
+| i18n (translations)          | `frontend/app/i18n/`                                     | English + Simplified Chinese                           |
+| Electron IPC                 | `emain/emain-ipc.ts`                                     | Main↔Renderer bridge                                   |
+| Go server lifecycle          | `cmd/server/main-server.go`                              | Bootstrap, listeners, RPC                              |
+| wsh CLI commands             | `cmd/wsh/cmd/`                                           | 39 Go files for CLI subcommands                        |
+| Config/settings              | `pkg/wconfig/`                                           | Settings model + schema generation                     |
+| Layout engine                | `frontend/layout/`                                       | Grid/pane layout with tests                            |
+| Tsunami sandbox              | `tsunami/`                                               | Own go.mod, own frontend, used for sandboxed UI blocks |
+| Database migrations          | `db/migrations-wstore/`                                  | SQLite schema evolution                                |
 
 ## CONVENTIONS
 
@@ -59,6 +61,7 @@ tideterm/
 - **Go linting**: golangci-lint with `unused` linter disabled
 - **Build system**: Task (Taskfile.yml), NOT Make. Use `task` commands.
 - **No `as any` / `@ts-ignore`** — fix properly
+- **Git commit / push messages**: use Traditional Chinese
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
@@ -81,6 +84,7 @@ tideterm/
 - **Vite bundles Monaco, Mermaid, KaTeX, Shiki, Cytoscape** as separate chunks
 
 ## COMMANDS
+
 ```bash
 # Setup
 task init                  # Install all deps (npm + go + docs)
