@@ -144,12 +144,28 @@ const TermSessionListItem = React.memo(
         isActive,
         onSelect,
         onKill,
+        canDrag,
+        draggingIndex,
+        dragOverIndex,
+        onDragStart,
+        onDragEnd,
+        onDragOver,
+        onDragLeave,
+        onDrop,
     }: {
         sessionId: string;
         index: number;
         isActive: boolean;
         onSelect: () => void;
         onKill: () => void;
+        draggingIndex: number | null;
+        dragOverIndex: number | null;
+        canDrag: boolean;
+        onDragStart: (idx: number) => void;
+        onDragEnd: () => void;
+        onDragOver: (idx: number) => void;
+        onDragLeave: (idx: number) => void;
+        onDrop: (idx: number) => void;
     }) => {
         const t = useT();
         const [sessionBlock] = WOS.useWaveObjectValue<Block>(WOS.makeORef("block", sessionId));
@@ -178,11 +194,40 @@ const TermSessionListItem = React.memo(
 
         return (
             <div
-                className={clsx("term-session-item", { active: isActive })}
+                className={clsx("term-session-item", {
+                    active: isActive,
+                    dragging: draggingIndex === index,
+                    "drag-over": dragOverIndex === index && draggingIndex !== index,
+                })}
                 onClick={onSelect}
                 title={cwd ? `${title}\n${cwd}` : title}
                 role="button"
                 tabIndex={0}
+                draggable={canDrag}
+                onDragStart={(e) => {
+                    if (!canDrag) {
+                        e.preventDefault();
+                        return;
+                    }
+                    onDragStart(index);
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", String(index));
+                }}
+                onDragEnd={() => {
+                    onDragEnd();
+                }}
+                onDragOver={(e) => {
+                    e.preventDefault();
+                    onDragOver(index);
+                    e.dataTransfer.dropEffect = "move";
+                }}
+                onDragLeave={() => {
+                    onDragLeave(index);
+                }}
+                onDrop={(e) => {
+                    e.preventDefault();
+                    onDrop(index);
+                }}
                 onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
@@ -638,6 +683,35 @@ const TerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel>) => 
     const listOpen = getSessionListOpen(blockData, hasMultiple, isNonMainActive);
     const shouldRenderMulti = listOpen || isNonMainActive;
     const rootRef = React.useRef<HTMLDivElement>(null);
+
+    // opqlo [session拖動排序]-拖動狀態
+    const [draggingIndex, setDraggingIndex] = React.useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null);
+
+    // opqlo [session拖動排序]-重新排列session順序（僅排序extra sessions）
+    const handleReorderSession = React.useCallback(
+        async (from: number, to: number) => {
+            const offset = showParentSession ? 1 : 0;
+            const fromExtra = from - offset;
+            const toExtra = to - offset;
+            if (fromExtra < 0 || toExtra < 0 || fromExtra === toExtra) {
+                return;
+            }
+            if (fromExtra >= extraSessionIds.length || toExtra >= extraSessionIds.length) {
+                return;
+            }
+            const reordered = [...extraSessionIds];
+            const [moved] = reordered.splice(fromExtra, 1);
+            reordered.splice(toExtra, 0, moved);
+            await RpcApi.SetMetaCommand(TabRpcClient, {
+                oref: WOS.makeORef("block", blockId),
+                meta: {
+                    [TermMultiSessionKey_SessionIds]: reordered,
+                },
+            });
+        },
+        [extraSessionIds, showParentSession, blockId]
+    );
     const savedSidebarWidth = React.useMemo(() => {
         const raw = blockData?.meta?.[TermMultiSessionKey_SessionListWidth];
         if (typeof raw === "number" && isFinite(raw) && raw > 0) {
@@ -791,6 +865,34 @@ const TerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel>) => 
                                     }}
                                     onKill={() => {
                                         void model.killTerminalSession(sessionId);
+                                    }}
+                                    canDrag={!(showParentSession && idx === 0)}
+                                    draggingIndex={draggingIndex}
+                                    dragOverIndex={dragOverIndex}
+                                    onDragStart={(i) => {
+                                        setDraggingIndex(i);
+                                        setDragOverIndex(i);
+                                    }}
+                                    onDragEnd={() => {
+                                        setDraggingIndex(null);
+                                        setDragOverIndex(null);
+                                    }}
+                                    onDragOver={(i) => {
+                                        if (dragOverIndex !== i) {
+                                            setDragOverIndex(i);
+                                        }
+                                    }}
+                                    onDragLeave={(i) => {
+                                        if (dragOverIndex === i) {
+                                            setDragOverIndex(null);
+                                        }
+                                    }}
+                                    onDrop={(toIdx) => {
+                                        setDraggingIndex(null);
+                                        setDragOverIndex(null);
+                                        if (draggingIndex != null) {
+                                            void handleReorderSession(draggingIndex, toIdx);
+                                        }
                                     }}
                                 />
                             );

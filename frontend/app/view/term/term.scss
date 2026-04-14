@@ -373,3 +373,12 @@
     opacity: 1;
     color: var(--text-color);
 }
+
+.term-session-item.dragging {
+    opacity: 0.4;
+}
+
+.term-session-item.drag-over {
+    border-color: var(--accent-color);
+    border-style: dashed;
+}
