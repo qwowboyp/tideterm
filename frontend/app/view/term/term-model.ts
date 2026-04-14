@@ -655,6 +655,12 @@ export class TermViewModel implements ViewModel {
             }
             return true;
         }
+        if (keyutil.checkKeyPressed(waveEvent, "Alt:ArrowUp")) {
+            return this.handleSessionCycleShortcut(-1);
+        }
+        if (keyutil.checkKeyPressed(waveEvent, "Alt:ArrowDown")) {
+            return this.handleSessionCycleShortcut(1);
+        }
         const blockData = globalStore.get(this.blockAtom);
         if (blockData.meta?.["term:mode"] == "vdom") {
             const vdomModel = this.getVDomModel();
@@ -1057,6 +1063,54 @@ export class TermViewModel implements ViewModel {
             return extraIds;
         }
         return [this.blockId, ...extraIds];
+    }
+
+    private handleSessionCycleShortcut(offset: number): boolean {
+        const targetModel = this.getSessionCycleTargetModel();
+        if (targetModel == null) {
+            return false;
+        }
+        return targetModel.cycleActiveTermSession(offset);
+    }
+
+    private getSessionCycleTargetModel(): TermViewModel | null {
+        const blockData = globalStore.get(this.blockAtom);
+        if (blockData?.meta?.["term:mode"] == "vdom") {
+            return null;
+        }
+        if (!blockData?.meta?.[TermMultiSessionKey_IsSession]) {
+            return this;
+        }
+        const parentBlockId = blockData?.meta?.[TermMultiSessionKey_ParentBlockId];
+        if (typeof parentBlockId !== "string" || !parentBlockId) {
+            return this;
+        }
+        const parentBCM = getBlockComponentModel(parentBlockId);
+        const parentModel = parentBCM?.viewModel;
+        if (parentModel?.viewType !== "term") {
+            return null;
+        }
+        return parentModel as TermViewModel;
+    }
+
+    private cycleActiveTermSession(offset: number): boolean {
+        const blockData = globalStore.get(this.blockAtom);
+        const sessionIds = this.getTermSessionIds(blockData);
+        if (sessionIds.length <= 1) {
+            return false;
+        }
+        const activeSessionId = this.getActiveTermSessionId(blockData);
+        let activeIndex = sessionIds.indexOf(activeSessionId);
+        if (activeIndex === -1) {
+            activeIndex = 0;
+        }
+        const nextIndex = (activeIndex + offset + sessionIds.length) % sessionIds.length;
+        const nextSessionId = sessionIds[nextIndex];
+        if (!nextSessionId || nextSessionId === activeSessionId) {
+            return false;
+        }
+        void this.setActiveTermSessionId(nextSessionId);
+        return true;
     }
 
     private getActiveTermSessionId(blockData: Block | null): string {
