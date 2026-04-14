@@ -210,6 +210,24 @@ function genericClose() {
     const blockData = blockAtom ? globalStore.get(blockAtom) : null;
     const isAIFileDiff = blockData?.meta?.view === "aifilediff";
 
+    // opqlo [ALT+W多Session修復] 多Session終端塊只關閉當前活躍Session而非整個Block
+    if (blockData?.meta?.view === "term" && blockId) {
+        const sessionIds: unknown[] | undefined = blockData.meta["term:sessionids"];
+        const extraIds = Array.isArray(sessionIds)
+            ? sessionIds.filter((v): v is string => typeof v === "string" && !!v)
+            : [];
+        const hasMultipleSessions = extraIds.length > 0 || blockData.meta["term:hideparentsession"] === true;
+        if (hasMultipleSessions) {
+            const bcm = getBlockComponentModel(blockId);
+            const termVM = bcm?.viewModel;
+            if (termVM && termVM.viewType === "term" && typeof (termVM as any).killTerminalSession === "function") {
+                const activeSessionId: string = blockData.meta["term:activesessionid"] || blockId;
+                fireAndForget(() => (termVM as any).killTerminalSession(activeSessionId));
+                return;
+            }
+        }
+    }
+
     fireAndForget(layoutModel.closeFocusedNode.bind(layoutModel));
 
     if (isAIFileDiff && isAIPanelOpen) {
@@ -354,7 +372,8 @@ function getDefaultNewBlockDef(): BlockDef {
         const blockData = globalStore.get(blockAtom);
         if (blockData?.meta?.view == "term") {
             const activeSessionId = blockData?.meta?.["term:activesessionid"];
-            const sessionBlockId = typeof activeSessionId === "string" && activeSessionId ? activeSessionId : blockData?.oid;
+            const sessionBlockId =
+                typeof activeSessionId === "string" && activeSessionId ? activeSessionId : blockData?.oid;
             if (sessionBlockId) {
                 const sessionAtom = WOS.getWaveObjectAtom<Block>(WOS.makeORef("block", sessionBlockId));
                 const sessionBlock = globalStore.get(sessionAtom);
