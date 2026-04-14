@@ -1,0 +1,27 @@
+{
+    "projectName": "TideTerm",
+    "initializedAt": "2026-04-14",
+    "defaultBranch": "main",
+    "planningScope": "full-project",
+    "workflow": {
+        "requireResearchBeforePlan": true,
+        "requireVerification": true,
+        "preferSmallPhases": true,
+        "trackState": true
+    },
+    "focus": {
+        "priorities": [
+            "core-stability",
+            "terminal-fidelity",
+            "remote-robustness",
+            "fork-feature-hardening",
+            "ai-capability-expansion"
+        ],
+        "avoid": [
+            "unbounded-feature-sprawl",
+            "heuristic-driven-terminal-truth",
+            "unsafe-secret-handling",
+            "main-branch-direct-work"
+        ]
+    }
+}
