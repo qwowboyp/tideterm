@@ -34,6 +34,10 @@ const (
 	ConfigKey_WaveAiShowCloudModes           = "waveai:showcloudmodes"
 	ConfigKey_WaveAiDefaultMode              = "waveai:defaultmode"
 
+	ConfigKey_TermCtrlMSubmit                = "term:ctrlmsubmit"
+
+	ConfigKey_AiCtrlMSubmit                  = "ai:ctrlmsubmit"
+
 	ConfigKey_TermClear                      = "term:*"
 	ConfigKey_TermFontSize                   = "term:fontsize"
 	ConfigKey_TermFontFamily                 = "term:fontfamily"

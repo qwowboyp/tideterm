@@ -4,6 +4,7 @@
 import { formatFileSizeError, isAcceptableFile, validateFileSize } from "@/app/aipanel/ai-utils";
 import { waveAIHasFocusWithin } from "@/app/aipanel/waveai-focus-utils";
 import { type WaveAIModel } from "@/app/aipanel/waveai-model";
+import { getSettingsKeyAtom, globalStore } from "@/app/store/global";
 import { Tooltip } from "@/element/tooltip";
 import { cn } from "@/util/util";
 import { useAtom, useAtomValue } from "jotai";
@@ -68,6 +69,19 @@ export const AIPanelInput = memo(({ onSubmit, status, model }: AIPanelInputProps
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         const isComposing = e.nativeEvent?.isComposing || e.keyCode == 229;
+        if (e.ctrlKey && (e.key === "m" || e.key === "M" || (e.key === "Enter" && !e.shiftKey))) {
+            const ctrlMSubmitEnabled = globalStore.get(getSettingsKeyAtom("ai:ctrlmsubmit")) ?? false;
+            if (!ctrlMSubmitEnabled) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            if (!isComposing) {
+                e.preventDefault();
+                onSubmit(e as any);
+            }
+            return;
+        }
         if (e.key === "Enter" && !e.shiftKey && !isComposing) {
             e.preventDefault();
             onSubmit(e as any);
@@ -183,7 +197,11 @@ export const AIPanelInput = memo(({ onSubmit, status, model }: AIPanelInputProps
                             </button>
                         </Tooltip>
                     ) : (
-                        <Tooltip content="Send message (Enter)" placement="top" divClassName="absolute bottom-1.5 right-1">
+                        <Tooltip
+                            content="Send message (Enter)"
+                            placement="top"
+                            divClassName="absolute bottom-1.5 right-1"
+                        >
                             <button
                                 type="submit"
                                 disabled={status !== "ready" || !input.trim()}

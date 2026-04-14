@@ -688,6 +688,15 @@ export class TermViewModel implements ViewModel {
             return true;
         }
 
+        if (keyutil.checkKeyPressed(waveEvent, "Ctrl:m")) {
+            const ctrlMSubmitEnabled = globalStore.get(getSettingsKeyAtom("term:ctrlmsubmit")) ?? false;
+            if (!ctrlMSubmitEnabled) {
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+        }
+
         // Handle Escape key during IME composition
         if (keyutil.checkKeyPressed(waveEvent, "Escape")) {
             if (this.termRef.current?.isComposing) {

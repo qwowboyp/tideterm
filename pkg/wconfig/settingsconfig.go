@@ -80,6 +80,8 @@ type SettingsType struct {
 
 	WaveAiShowCloudModes bool   `json:"waveai:showcloudmodes,omitempty"`
 	WaveAiDefaultMode    string `json:"waveai:defaultmode,omitempty"`
+	TermCtrlMSubmit      *bool  `json:"term:ctrlmsubmit,omitempty"`
+	AiCtrlMSubmit        *bool  `json:"ai:ctrlmsubmit,omitempty"`
 
 	TermClear               bool     `json:"term:*,omitempty"`
 	TermFontSize            float64  `json:"term:fontsize,omitempty"`

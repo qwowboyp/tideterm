@@ -77,6 +77,12 @@
         "waveai:defaultmode": {
           "type": "string"
         },
+        "term:ctrlmsubmit": {
+          "type": "boolean"
+        },
+        "ai:ctrlmsubmit": {
+          "type": "boolean"
+        },
         "term:*": {
           "type": "boolean"
         },
