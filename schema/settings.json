@@ -3,6 +3,30 @@
   "$id": "https://github.com/sanshao85/tideterm/pkg/wconfig/settings-type",
   "$ref": "#/$defs/SettingsType",
   "$defs": {
+    "SavedCommand": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "autoEnter": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "command",
+        "autoEnter"
+      ]
+    },
     "SettingsType": {
       "properties": {
         "app:*": {
@@ -130,6 +154,12 @@
         },
         "term:remotetmuxresume": {
           "type": "boolean"
+        },
+        "term:savedcommands": {
+          "items": {
+            "$ref": "#/$defs/SavedCommand"
+          },
+          "type": "array"
         },
         "editor:minimapenabled": {
           "type": "boolean"

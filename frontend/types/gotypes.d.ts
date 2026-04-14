@@ -1261,6 +1261,14 @@ declare global {
         winsize?: WinSize;
     };
 
+    // wconfig.SavedCommand
+    type SavedCommand = {
+        id: string;
+        title: string;
+        command: string;
+        autoEnter: boolean;
+    };
+
     // wshrpc.SecretMeta
     type SecretMeta = {
         desc: string;
@@ -1317,6 +1325,7 @@ declare global {
         "term:shiftenternewline"?: boolean;
         "term:macoptionismeta"?: boolean;
         "term:remotetmuxresume"?: boolean;
+        "term:savedcommands"?: SavedCommand[];
         "editor:minimapenabled"?: boolean;
         "editor:stickyscrollenabled"?: boolean;
         "editor:wordwrap"?: boolean;

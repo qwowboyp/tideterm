@@ -53,6 +53,7 @@ const (
 	ConfigKey_TermShiftEnterNewline          = "term:shiftenternewline"
 	ConfigKey_TermMacOptionIsMeta            = "term:macoptionismeta"
 	ConfigKey_TermRemoteTmuxResume           = "term:remotetmuxresume"
+	ConfigKey_TermSavedCommands              = "term:savedcommands"
 
 	ConfigKey_EditorMinimapEnabled           = "editor:minimapenabled"
 	ConfigKey_EditorStickyScrollEnabled      = "editor:stickyscrollenabled"

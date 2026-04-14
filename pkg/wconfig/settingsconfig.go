@@ -52,6 +52,13 @@ type AiSettingsType struct {
 	DisplayOrder    float64 `json:"display:order,omitempty"`
 }
 
+type SavedCommand struct {
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	Command   string `json:"command"`
+	AutoEnter bool   `json:"autoEnter"`
+}
+
 type SettingsType struct {
 	AppClear                      bool   `json:"app:*,omitempty"`
 	AppGlobalHotkey               string `json:"app:globalhotkey,omitempty"`
@@ -83,21 +90,22 @@ type SettingsType struct {
 	TermCtrlMSubmit      *bool  `json:"term:ctrlmsubmit,omitempty"`
 	AiCtrlMSubmit        *bool  `json:"ai:ctrlmsubmit,omitempty"`
 
-	TermClear               bool     `json:"term:*,omitempty"`
-	TermFontSize            float64  `json:"term:fontsize,omitempty"`
-	TermFontFamily          string   `json:"term:fontfamily,omitempty"`
-	TermTheme               string   `json:"term:theme,omitempty"`
-	TermDisableWebGl        bool     `json:"term:disablewebgl,omitempty"`
-	TermLocalShellPath      string   `json:"term:localshellpath,omitempty"`
-	TermLocalShellOpts      []string `json:"term:localshellopts,omitempty"`
-	TermGitBashPath         string   `json:"term:gitbashpath,omitempty"`
-	TermScrollback          *int64   `json:"term:scrollback,omitempty"`
-	TermCopyOnSelect        *bool    `json:"term:copyonselect,omitempty"`
-	TermTransparency        *float64 `json:"term:transparency,omitempty"`
-	TermAllowBracketedPaste *bool    `json:"term:allowbracketedpaste,omitempty"`
-	TermShiftEnterNewline   *bool    `json:"term:shiftenternewline,omitempty"`
-	TermMacOptionIsMeta     *bool    `json:"term:macoptionismeta,omitempty"`
-	TermRemoteTmuxResume    *bool    `json:"term:remotetmuxresume,omitempty"`
+	TermClear               bool           `json:"term:*,omitempty"`
+	TermFontSize            float64        `json:"term:fontsize,omitempty"`
+	TermFontFamily          string         `json:"term:fontfamily,omitempty"`
+	TermTheme               string         `json:"term:theme,omitempty"`
+	TermDisableWebGl        bool           `json:"term:disablewebgl,omitempty"`
+	TermLocalShellPath      string         `json:"term:localshellpath,omitempty"`
+	TermLocalShellOpts      []string       `json:"term:localshellopts,omitempty"`
+	TermGitBashPath         string         `json:"term:gitbashpath,omitempty"`
+	TermScrollback          *int64         `json:"term:scrollback,omitempty"`
+	TermCopyOnSelect        *bool          `json:"term:copyonselect,omitempty"`
+	TermTransparency        *float64       `json:"term:transparency,omitempty"`
+	TermAllowBracketedPaste *bool          `json:"term:allowbracketedpaste,omitempty"`
+	TermShiftEnterNewline   *bool          `json:"term:shiftenternewline,omitempty"`
+	TermMacOptionIsMeta     *bool          `json:"term:macoptionismeta,omitempty"`
+	TermRemoteTmuxResume    *bool          `json:"term:remotetmuxresume,omitempty"`
+	TermSavedCommands       []SavedCommand `json:"term:savedcommands,omitempty"`
 
 	EditorMinimapEnabled      bool    `json:"editor:minimapenabled,omitempty"`
 	EditorStickyScrollEnabled bool    `json:"editor:stickyscrollenabled,omitempty"`
@@ -785,6 +793,13 @@ func SetBaseConfigValue(toMerge waveobj.MetaMapType) error {
 				}
 				val = convertedVal
 				rtype = reflect.TypeOf(val)
+			}
+			if rtype != ctype {
+				convertedPtr := reflect.New(ctype)
+				if err := utilfn.ReUnmarshal(convertedPtr.Interface(), val); err == nil {
+					val = convertedPtr.Elem().Interface()
+					rtype = reflect.TypeOf(val)
+				}
 			}
 			if rtype != ctype {
 				if ctype == reflect.PointerTo(rtype) {
