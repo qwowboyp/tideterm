@@ -18,8 +18,8 @@ import {
     useBlockAtom,
     WOS,
 } from "@/app/store/global";
-import { useTabModel } from "@/app/store/tab-model";
 import { uxCloseBlock } from "@/app/store/keymodel";
+import { useTabModel } from "@/app/store/tab-model";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { WorkspaceLayoutModel } from "@/app/workspace/workspace-layout-model";
