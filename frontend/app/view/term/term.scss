@@ -346,6 +346,14 @@
     color: var(--muted-color);
 }
 
+.term-session-item-time {
+    font-size: 10px;
+    color: var(--muted-color);
+    flex: 0 0 auto;
+    white-space: nowrap;
+    margin-left: 4px;
+}
+
 .term-session-item-subtitle {
     font-size: 11px;
     color: var(--muted-color);

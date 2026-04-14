@@ -127,6 +127,16 @@ function getSessionStatusClassName(hasRecentOutput: boolean): string {
     return hasRecentOutput ? "is-busy" : "is-ready";
 }
 
+function formatLastOutputTime(timestamp: number): string {
+    if (timestamp <= 0) return "";
+    const d = new Date(timestamp);
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    return `${month}/${day} ${hours}:${minutes}`;
+}
+
 const TermSessionListItem = React.memo(
     ({
         sessionId,
@@ -147,6 +157,7 @@ const TermSessionListItem = React.memo(
         const sessionTermViewModel = blockComponentModel?.viewModel as TermViewModel | undefined;
         const [shellType, setShellType] = React.useState<string | null>(null);
         const hasRecentOutput = jotai.useAtomValue(sessionTermViewModel?.busyAtom ?? jotai.atom(false));
+        const lastOutputTime = jotai.useAtomValue(sessionTermViewModel?.lastOutputTimeAtom ?? jotai.atom(0));
 
         React.useEffect(() => {
             let cancelled = false;
@@ -187,6 +198,7 @@ const TermSessionListItem = React.memo(
                         {title}
                         {conn !== "local" ? <span className="term-session-item-conn"> · {conn}</span> : null}
                     </div>
+                    <span className="term-session-item-time">{formatLastOutputTime(lastOutputTime)}</span>
                     <button
                         className="term-session-item-kill"
                         title={t("term.sessions.kill")}
@@ -502,11 +514,15 @@ const SingleTerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel
         model.termRef.current = termWrap;
         globalStore.set(model.shellIntegrationStatus, globalStore.get(termWrap.shellIntegrationStatusAtom));
         globalStore.set(model.busyAtom, globalStore.get(termWrap.busyAtom));
+        globalStore.set(model.lastOutputTimeAtom, globalStore.get(termWrap.lastOutputTimeAtom));
         const shellIntegrationStatusUnsub = globalStore.sub(termWrap.shellIntegrationStatusAtom, () => {
             globalStore.set(model.shellIntegrationStatus, globalStore.get(termWrap.shellIntegrationStatusAtom));
         });
         const busyUnsub = globalStore.sub(termWrap.busyAtom, () => {
             globalStore.set(model.busyAtom, globalStore.get(termWrap.busyAtom));
+        });
+        const lastOutputTimeUnsub = globalStore.sub(termWrap.lastOutputTimeAtom, () => {
+            globalStore.set(model.lastOutputTimeAtom, globalStore.get(termWrap.lastOutputTimeAtom));
         });
         const rszObs = new ResizeObserver(() => {
             termWrap.handleResize_debounced();
@@ -525,6 +541,7 @@ const SingleTerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel
         return () => {
             shellIntegrationStatusUnsub();
             busyUnsub();
+            lastOutputTimeUnsub();
             globalStore.set(model.shellIntegrationStatus, null);
             globalStore.set(model.busyAtom, false);
             termWrap.dispose();
