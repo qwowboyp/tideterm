@@ -685,6 +685,17 @@ export class TermWrap {
             return handleOsc16162Command(data, this.blockId, this.loaded, this);
         });
         this.terminal.attachCustomKeyEventHandler(waveOptions.keydownHandler);
+        this.terminal.parser.registerCsiHandler({ prefix: "?", final: "l" }, (params) => {
+            if (params[0] === 1049) {
+                setTimeout(() => {
+                    const mouseMode = this.terminal.modes?.mouseTrackingMode;
+                    if (mouseMode && mouseMode !== "none") {
+                        this.terminal.write("\x1b[?1006l\x1b[?1003l\x1b[?1002l\x1b[?1000l");
+                    }
+                }, 0);
+            }
+            return false;
+        });
         this.terminal.attachCustomWheelEventHandler((ev: WheelEvent) => {
             if (this.isLocalConnection()) {
                 return true;

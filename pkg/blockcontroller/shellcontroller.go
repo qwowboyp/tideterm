@@ -207,7 +207,10 @@ func (sc *ShellController) resetTerminalState(logCtx context.Context) {
 	var buf bytes.Buffer
 	buf.WriteString("\x1b[0m")                       // reset attributes
 	buf.WriteString("\x1b[?25h")                     // show cursor
-	buf.WriteString("\x1b[?1000l")                   // disable mouse tracking
+	buf.WriteString("\x1b[?1000l")                   // disable basic mouse tracking
+	buf.WriteString("\x1b[?1002l")                   // disable button-event mouse tracking
+	buf.WriteString("\x1b[?1003l")                   // disable any-event mouse tracking
+	buf.WriteString("\x1b[?1006l")                   // disable SGR extended mouse mode
 	buf.WriteString("\x1b[?1007l")                   // disable alternate scroll mode
 	buf.WriteString("\x1b[?2004l")                   // disable bracketed paste mode
 	buf.WriteString(shellutil.FormatOSC(16162, "R")) // OSC 16162 "R" - disable alternate screen mode (only if active), reset "shell integration" status.
@@ -734,15 +737,15 @@ func (bc *ShellController) makeSwapToken(ctx context.Context, logCtx context.Con
 		Env:   make(map[string]string),
 		Exp:   time.Now().Add(5 * time.Minute),
 	}
-		token.Env["TERM_PROGRAM"] = "tideterm"
-		token.Env["TIDETERM_BLOCKID"] = bc.BlockId
-		token.Env["TIDETERM_VERSION"] = wavebase.WaveVersion
-		token.Env["TIDETERM"] = "1"
+	token.Env["TERM_PROGRAM"] = "tideterm"
+	token.Env["TIDETERM_BLOCKID"] = bc.BlockId
+	token.Env["TIDETERM_VERSION"] = wavebase.WaveVersion
+	token.Env["TIDETERM"] = "1"
 	tabId, err := wstore.DBFindTabForBlockId(ctx, bc.BlockId)
 	if err != nil {
 		log.Printf("error finding tab for block: %v\n", err)
 	} else {
-			token.Env["TIDETERM_TABID"] = tabId
+		token.Env["TIDETERM_TABID"] = tabId
 	}
 	if tabId != "" {
 		wsId, err := wstore.DBFindWorkspaceForTabId(ctx, tabId)
@@ -756,7 +759,7 @@ func (bc *ShellController) makeSwapToken(ctx context.Context, logCtx context.Con
 	if err != nil {
 		log.Printf("error getting client data: %v\n", err)
 	} else {
-			token.Env["TIDETERM_CLIENTID"] = clientData.OID
+		token.Env["TIDETERM_CLIENTID"] = clientData.OID
 	}
 	token.Env["TIDETERM_CONN"] = remoteName
 	envMap, err := resolveEnvMap(bc.BlockId, blockMeta, remoteName)
