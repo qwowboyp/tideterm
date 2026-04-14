@@ -52,6 +52,10 @@ const en = {
     "settings.remoteTmuxResume.description":
         "When enabled, TideTerm will use tmux on remote terminals (SSH/WSL) when available so sessions can resume after reconnects. If tmux is not installed, TideTerm will fall back to a normal shell and show an install hint.",
     "settings.remoteTmuxResume.toggle": "Auto-resume remote terminals with tmux (recommended)",
+    "settings.ctrlmSubmit": "CTRL+M to Send",
+    "settings.ctrlmSubmit.description":
+        "When enabled, CTRL+M will act as Enter and send the AI chat message. Disable this if you use an IME (e.g., Zhuyin/Bopomofo) and frequently mistype CTRL+M when typing commas.",
+    "settings.ctrlmSubmit.toggle": "Allow CTRL+M to send messages",
 
     // Workspace / widgets
     "workspace.localWaveApps": "Local Apps",
@@ -483,6 +487,10 @@ const zhCN: Record<I18nKey, string> = {
     "settings.remoteTmuxResume.description":
         "启用后，远程终端（SSH/WSL）在检测到 tmux 时会自动进入 tmux，会话可在断线重连后继续（如电脑休眠/网络中断）。若未安装 tmux，则正常打开普通 shell，并提示可选安装。",
     "settings.remoteTmuxResume.toggle": "使用 tmux 自动续连远程终端（推荐）",
+    "settings.ctrlmSubmit": "CTRL+M 发送",
+    "settings.ctrlmSubmit.description":
+        "启用后，CTRL+M 会作为 Enter 发送 AI 聊天消息。如果您使用注音等输入法，经常在输入逗号时误触 CTRL+M，可以关闭此选项。",
+    "settings.ctrlmSubmit.toggle": "允许 CTRL+M 发送消息",
 
     // Workspace / widgets
     "workspace.localWaveApps": "本地应用",
@@ -910,6 +918,10 @@ const zhTW: Record<I18nKey, string> = {
     "settings.remoteTmuxResume.description":
         "啟用後，遠端終端機（SSH/WSL）在偵測到 tmux 時會自動進入 tmux，工作階段可在斷線重連後繼續（如電腦休眠／網路中斷）。若未安裝 tmux，則正常開啟一般 shell，並提示可選安裝。",
     "settings.remoteTmuxResume.toggle": "使用 tmux 自動續連遠端終端機（建議）",
+    "settings.ctrlmSubmit": "CTRL+M 送出",
+    "settings.ctrlmSubmit.description":
+        "啟用後，CTRL+M 會作為 Enter 送出 AI 聊天訊息。如果您使用注音等輸入法，經常在輸入逗號時誤觸 CTRL+M，可以關閉此選項。",
+    "settings.ctrlmSubmit.toggle": "允許 CTRL+M 送出訊息",
 
     // Workspace / widgets
     "workspace.localWaveApps": "本機應用程式",

@@ -18,6 +18,7 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
     const [isFontSizeUpdating, setIsFontSizeUpdating] = useState(false);
 
     const remoteTmuxResumeEnabled = settings?.["term:remotetmuxresume"] ?? true;
+    const ctrlmSubmitEnabled = settings?.["term:ctrlmsubmit"] ?? false;
     const configuredFontSize = typeof settings?.["term:fontsize"] === "number" ? settings["term:fontsize"] : 12;
     const [fontSize, setFontSize] = useState(String(configuredFontSize));
 
@@ -56,6 +57,21 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
 
         try {
             await RpcApi.SetConfigCommand(TabRpcClient, { "term:remotetmuxresume": enabled });
+            await refreshConfigAndReloadSelectedFile();
+        } catch (e: any) {
+            globalStore.set(model.errorMessageAtom, e?.message ? String(e.message) : String(e));
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const setCtrlmSubmit = async (enabled: boolean) => {
+        if (enabled === ctrlmSubmitEnabled || isUpdating) return;
+        setIsUpdating(true);
+        globalStore.set(model.errorMessageAtom, null);
+
+        try {
+            await RpcApi.SetConfigCommand(TabRpcClient, { "term:ctrlmsubmit": enabled });
             await refreshConfigAndReloadSelectedFile();
         } catch (e: any) {
             globalStore.set(model.errorMessageAtom, e?.message ? String(e.message) : String(e));
@@ -184,6 +200,23 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
                         onChange={(e) => setRemoteTmuxResume(e.target.checked)}
                     />
                     <span className="text-sm">{t("settings.remoteTmuxResume.toggle")}</span>
+                </label>
+            </div>
+
+            <div className="flex flex-col gap-1">
+                <div className="text-lg font-semibold">{t("settings.ctrlmSubmit")}</div>
+                <div className="text-sm text-muted-foreground">{t("settings.ctrlmSubmit.description")}</div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        checked={ctrlmSubmitEnabled}
+                        disabled={isUpdating}
+                        onChange={(e) => setCtrlmSubmit(e.target.checked)}
+                    />
+                    <span className="text-sm">{t("settings.ctrlmSubmit.toggle")}</span>
                 </label>
             </div>
         </div>
