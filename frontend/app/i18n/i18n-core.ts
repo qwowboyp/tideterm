@@ -160,6 +160,20 @@ const en = {
     "term.tmuxSessions.confirm.killAll": "Kill all tmux sessions for this connection?",
     "term.tmuxSessions.prompt.alias": "Display name",
 
+    // Saved commands sidebar
+    "term.savedCommands.viewName": "Saved Commands",
+    "term.savedCommands.title": "Saved Commands",
+    "term.savedCommands.emptyTitle": "No saved commands yet",
+    "term.savedCommands.emptyHint": "Add a command to reuse it later.",
+    "term.savedCommands.form.name": "Name",
+    "term.savedCommands.form.command": "Command",
+    "term.savedCommands.form.autoEnter": "Auto-enter",
+    "term.savedCommands.noFocusedTerminal": "Focus a terminal to insert a command.",
+    "term.savedCommands.insert": "Insert",
+    "term.savedCommands.add": "Add Command",
+    "term.savedCommands.injectTooltip": "Click to inject into terminal",
+    "term.savedCommands.focusFirst": "Focus a terminal first",
+
     // Web view settings menu
     "webviewmenu.copyUrlToClipboard": "Copy URL to Clipboard",
     "webviewmenu.setBlockHomepage": "Set Block Homepage",
@@ -595,6 +609,20 @@ const zhCN: Record<I18nKey, string> = {
     "term.tmuxSessions.confirm.killAll": "确定结束此连接上的所有 tmux 会话？",
     "term.tmuxSessions.prompt.alias": "显示名称",
 
+    // Saved commands sidebar
+    "term.savedCommands.viewName": "已保存命令",
+    "term.savedCommands.title": "已保存命令",
+    "term.savedCommands.emptyTitle": "还没有已保存命令",
+    "term.savedCommands.emptyHint": "添加一个命令，方便之后重复使用。",
+    "term.savedCommands.form.name": "名称",
+    "term.savedCommands.form.command": "命令",
+    "term.savedCommands.form.autoEnter": "自动送出",
+    "term.savedCommands.noFocusedTerminal": "请先聚焦终端机，才能插入命令。",
+    "term.savedCommands.insert": "插入",
+    "term.savedCommands.add": "添加命令",
+    "term.savedCommands.injectTooltip": "点击插入到终端机",
+    "term.savedCommands.focusFirst": "请先聚焦终端机",
+
     // Web view settings menu
     "webviewmenu.copyUrlToClipboard": "复制 URL 到剪贴板",
     "webviewmenu.setBlockHomepage": "设置块主页",
@@ -1025,6 +1053,20 @@ const zhTW: Record<I18nKey, string> = {
     "term.tmuxSessions.confirm.killRisk": "此工作階段可能為外部或目前已連線，仍要結束嗎？",
     "term.tmuxSessions.confirm.killAll": "確定要結束此連線上的所有 tmux 工作階段嗎？",
     "term.tmuxSessions.prompt.alias": "顯示名稱",
+
+    // 已儲存指令側邊欄
+    "term.savedCommands.viewName": "已儲存的命令",
+    "term.savedCommands.title": "已儲存的命令",
+    "term.savedCommands.emptyTitle": "尚無已儲存的命令",
+    "term.savedCommands.emptyHint": "新增一個命令，方便之後重複使用。",
+    "term.savedCommands.form.name": "名稱",
+    "term.savedCommands.form.command": "命令",
+    "term.savedCommands.form.autoEnter": "自動送出",
+    "term.savedCommands.noFocusedTerminal": "請先聚焦終端機，才能插入命令。",
+    "term.savedCommands.insert": "插入",
+    "term.savedCommands.add": "新增命令",
+    "term.savedCommands.injectTooltip": "點擊插入到終端機",
+    "term.savedCommands.focusFirst": "請先聚焦終端機",
 
     // Web view settings menu
     "webviewmenu.copyUrlToClipboard": "複製 URL 到剪貼簿",
