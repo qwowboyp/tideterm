@@ -512,6 +512,7 @@ export class TermWrap {
     lastCommandAtom: jotai.PrimitiveAtom<string | null>;
     busyAtom: jotai.PrimitiveAtom<boolean>;
     busyTimeoutId: number | null;
+    lastOutputTimeAtom: jotai.PrimitiveAtom<number>;
 
     // IME composition state tracking
     // Prevents duplicate input when switching input methods during composition (e.g., using Capslock)
@@ -634,6 +635,7 @@ export class TermWrap {
         this.lastCommandAtom = jotai.atom(null) as jotai.PrimitiveAtom<string | null>;
         this.busyAtom = jotai.atom(false) as jotai.PrimitiveAtom<boolean>;
         this.busyTimeoutId = null;
+        this.lastOutputTimeAtom = jotai.atom(Date.now()) as jotai.PrimitiveAtom<number>;
         this.terminal = new Terminal(options);
         this.fitAddon = new FitAddon();
         this.fitAddon.noScrollbar = PLATFORM === PlatformMacOS;
@@ -1039,10 +1041,11 @@ export class TermWrap {
                     window.clearTimeout(this.busyTimeoutId);
                 }
                 globalStore.set(this.busyAtom, true);
+                globalStore.set(this.lastOutputTimeAtom, this.lastUpdated);
                 this.busyTimeoutId = window.setTimeout(() => {
                     globalStore.set(this.busyAtom, false);
                     this.busyTimeoutId = null;
-                }, 5000);
+                }, 3000);
             }
             resolve();
         });

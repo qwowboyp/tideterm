@@ -89,6 +89,8 @@ export class TermViewModel implements ViewModel {
     busyAtom: jotai.Atom<boolean>;
     activeShellIntegrationStatus: jotai.Atom<"ready" | "running-command" | null>;
     activeBusyAtom: jotai.Atom<boolean>;
+    lastOutputTimeAtom: jotai.Atom<number>;
+    activeLastOutputTimeAtom: jotai.Atom<number>;
     shellProcStatusUnsubFn: () => void;
     termBPMUnsubFn: () => void;
     isCmdController: jotai.Atom<boolean>;
@@ -119,6 +121,7 @@ export class TermViewModel implements ViewModel {
         this.isRestarting = jotai.atom(false);
         this.shellIntegrationStatus = jotai.atom<"ready" | "running-command" | null>(null);
         this.busyAtom = jotai.atom(false);
+        this.lastOutputTimeAtom = jotai.atom(Date.now());
         this.activeShellIntegrationStatus = jotai.atom((get) => {
             const blockData = get(this.blockAtom);
             const activeSessionId = this.getActiveTermSessionId(blockData);
@@ -144,6 +147,19 @@ export class TermViewModel implements ViewModel {
                 return get(activeTermViewModel.busyAtom);
             }
             return false;
+        });
+        this.activeLastOutputTimeAtom = jotai.atom((get) => {
+            const blockData = get(this.blockAtom);
+            const activeSessionId = this.getActiveTermSessionId(blockData);
+            if (activeSessionId === this.blockId) {
+                return get(this.lastOutputTimeAtom);
+            }
+            const bcm = getBlockComponentModel(activeSessionId);
+            const activeTermViewModel = bcm?.viewModel as TermViewModel;
+            if (activeTermViewModel?.lastOutputTimeAtom) {
+                return get(activeTermViewModel.lastOutputTimeAtom);
+            }
+            return 0;
         });
         this.viewIcon = jotai.atom((get) => {
             const termMode = get(this.termMode);
