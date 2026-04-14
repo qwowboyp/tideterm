@@ -85,6 +85,10 @@ export class TermViewModel implements ViewModel {
     endIconButtons: jotai.Atom<IconButtonDecl[]>;
     shellProcFullStatus: jotai.PrimitiveAtom<BlockControllerRuntimeStatus>;
     shellProcStatus: jotai.Atom<string>;
+    shellIntegrationStatus: jotai.PrimitiveAtom<"ready" | "running-command" | null>;
+    busyAtom: jotai.Atom<boolean>;
+    activeShellIntegrationStatus: jotai.Atom<"ready" | "running-command" | null>;
+    activeBusyAtom: jotai.Atom<boolean>;
     shellProcStatusUnsubFn: () => void;
     termBPMUnsubFn: () => void;
     isCmdController: jotai.Atom<boolean>;
@@ -113,6 +117,34 @@ export class TermViewModel implements ViewModel {
             return blockData?.meta?.["term:mode"] ?? "term";
         });
         this.isRestarting = jotai.atom(false);
+        this.shellIntegrationStatus = jotai.atom<"ready" | "running-command" | null>(null);
+        this.busyAtom = jotai.atom(false);
+        this.activeShellIntegrationStatus = jotai.atom((get) => {
+            const blockData = get(this.blockAtom);
+            const activeSessionId = this.getActiveTermSessionId(blockData);
+            if (activeSessionId === this.blockId) {
+                return get(this.shellIntegrationStatus);
+            }
+            const bcm = getBlockComponentModel(activeSessionId);
+            const activeTermViewModel = bcm?.viewModel as TermViewModel;
+            if (activeTermViewModel?.shellIntegrationStatus) {
+                return get(activeTermViewModel.shellIntegrationStatus);
+            }
+            return null;
+        });
+        this.activeBusyAtom = jotai.atom((get) => {
+            const blockData = get(this.blockAtom);
+            const activeSessionId = this.getActiveTermSessionId(blockData);
+            if (activeSessionId === this.blockId) {
+                return get(this.busyAtom);
+            }
+            const bcm = getBlockComponentModel(activeSessionId);
+            const activeTermViewModel = bcm?.viewModel as TermViewModel;
+            if (activeTermViewModel?.busyAtom) {
+                return get(activeTermViewModel.busyAtom);
+            }
+            return false;
+        });
         this.viewIcon = jotai.atom((get) => {
             const termMode = get(this.termMode);
             if (termMode == "vdom") {
@@ -1130,7 +1162,10 @@ export class TermViewModel implements ViewModel {
             const parentBlockData = globalStore.get(this.blockAtom);
             const activeSessionId = this.getActiveTermSessionId(parentBlockData);
             const existingSessionIds = this.getTermSessionIds(parentBlockData).filter((id) => id !== this.blockId);
-            const nextActive = activeSessionId === this.blockId && existingSessionIds.length > 0 ? existingSessionIds[existingSessionIds.length - 1] : activeSessionId;
+            const nextActive =
+                activeSessionId === this.blockId && existingSessionIds.length > 0
+                    ? existingSessionIds[existingSessionIds.length - 1]
+                    : activeSessionId;
             const metaUpdate: Record<string, unknown> = {};
 
             if (existingSessionIds.length > 0) {

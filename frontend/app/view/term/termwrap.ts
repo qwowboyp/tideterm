@@ -5,16 +5,7 @@ import { getFileSubject } from "@/app/store/wps";
 import { sendWSCommand } from "@/app/store/ws";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
-import {
-    WOS,
-    atoms,
-    fetchWaveFile,
-    getApi,
-    getSettingsKeyAtom,
-    globalStore,
-    openLink,
-    recordTEvent,
-} from "@/store/global";
+import { WOS, fetchWaveFile, getApi, getSettingsKeyAtom, globalStore, openLink, recordTEvent } from "@/store/global";
 import * as services from "@/store/services";
 import { PLATFORM, PlatformMacOS } from "@/util/platformutil";
 import { base64ToArray, base64ToString, fireAndForget } from "@/util/util";
@@ -519,6 +510,8 @@ export class TermWrap {
     promptMarkers: TermTypes.IMarker[] = [];
     shellIntegrationStatusAtom: jotai.PrimitiveAtom<"ready" | "running-command" | null>;
     lastCommandAtom: jotai.PrimitiveAtom<string | null>;
+    busyAtom: jotai.PrimitiveAtom<boolean>;
+    busyTimeoutId: number | null;
 
     // IME composition state tracking
     // Prevents duplicate input when switching input methods during composition (e.g., using Capslock)
@@ -612,8 +605,8 @@ export class TermWrap {
             (fastModifier === "ctrl" && ev.ctrlKey) ||
             (fastModifier === "shift" && ev.shiftKey);
         const sensitivity = useFast
-            ? this.terminal.options.fastScrollSensitivity ?? 5
-            : this.terminal.options.scrollSensitivity ?? 1;
+            ? (this.terminal.options.fastScrollSensitivity ?? 5)
+            : (this.terminal.options.scrollSensitivity ?? 1);
         const scaled = delta * sensitivity;
         if (scaled === 0) {
             return 0;
@@ -639,6 +632,8 @@ export class TermWrap {
         this.promptMarkers = [];
         this.shellIntegrationStatusAtom = jotai.atom(null) as jotai.PrimitiveAtom<"ready" | "running-command" | null>;
         this.lastCommandAtom = jotai.atom(null) as jotai.PrimitiveAtom<string | null>;
+        this.busyAtom = jotai.atom(false) as jotai.PrimitiveAtom<boolean>;
+        this.busyTimeoutId = null;
         this.terminal = new Terminal(options);
         this.fitAddon = new FitAddon();
         this.fitAddon.noScrollbar = PLATFORM === PlatformMacOS;
@@ -830,6 +825,10 @@ export class TermWrap {
     }
 
     dispose() {
+        if (this.busyTimeoutId != null) {
+            window.clearTimeout(this.busyTimeoutId);
+            this.busyTimeoutId = null;
+        }
         // Clear output buffer scheduler
         if (this.outputFlushRafId != null) {
             window.cancelAnimationFrame(this.outputFlushRafId);
@@ -933,7 +932,11 @@ export class TermWrap {
                     } else if (b === 0x0d) {
                         this.outputBufferHasCarriageReturn = true;
                     }
-                    if (this.outputBufferHasNewline && this.outputBufferHasEscape && this.outputBufferHasCarriageReturn) {
+                    if (
+                        this.outputBufferHasNewline &&
+                        this.outputBufferHasEscape &&
+                        this.outputBufferHasCarriageReturn
+                    ) {
                         break;
                     }
                 }
@@ -965,7 +968,9 @@ export class TermWrap {
             // that looks like a cursor-up/erase/redraw cycle (escape sequences or CR without newline).
             const isRemote = !this.isLocalConnection();
             const minDelay =
-                isRemote && (this.outputBufferHasEscape || this.outputBufferHasCarriageReturn) && !this.outputBufferHasNewline
+                isRemote &&
+                (this.outputBufferHasEscape || this.outputBufferHasCarriageReturn) &&
+                !this.outputBufferHasNewline
                     ? this.outputFlushMinDelayRemoteMs
                     : 0;
             const now = performance.now();
@@ -1013,10 +1018,10 @@ export class TermWrap {
         this.outputBufferHasNewline = false;
         this.outputBufferHasEscape = false;
         this.outputBufferHasCarriageReturn = false;
-        this.doTerminalWrite(merged, null);
+        this.doTerminalWrite(merged, null, true);
     }
 
-    doTerminalWrite(data: string | Uint8Array, setPtyOffset?: number): Promise<void> {
+    doTerminalWrite(data: string | Uint8Array, setPtyOffset?: number, trackActivity: boolean = true): Promise<void> {
         let resolve: () => void = null;
         let prtn = new Promise<void>((presolve, _) => {
             resolve = presolve;
@@ -1029,6 +1034,16 @@ export class TermWrap {
                 this.dataBytesProcessed += data.length;
             }
             this.lastUpdated = Date.now();
+            if (trackActivity) {
+                if (this.busyTimeoutId != null) {
+                    window.clearTimeout(this.busyTimeoutId);
+                }
+                globalStore.set(this.busyAtom, true);
+                this.busyTimeoutId = window.setTimeout(() => {
+                    globalStore.set(this.busyAtom, false);
+                    this.busyTimeoutId = null;
+                }, 5000);
+            }
             resolve();
         });
         return prtn;
@@ -1052,7 +1067,7 @@ export class TermWrap {
                     this.terminal.resize(fileTermSize.cols, fileTermSize.rows);
                     didResize = true;
                 }
-                this.doTerminalWrite(cacheData, ptyOffset);
+                this.doTerminalWrite(cacheData, ptyOffset, false);
                 if (didResize) {
                     this.terminal.resize(curTermSize.cols, curTermSize.rows);
                 }
@@ -1063,7 +1078,7 @@ export class TermWrap {
             `terminal loaded cachefile:${cacheData?.byteLength ?? 0} main:${mainData?.byteLength ?? 0} bytes, ${Date.now() - startTs}ms`
         );
         if (mainFile != null) {
-            await this.doTerminalWrite(mainData, null);
+            await this.doTerminalWrite(mainData, null, false);
         }
     }
 
