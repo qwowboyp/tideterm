@@ -299,11 +299,46 @@
 }
 
 .term-session-item-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-size: 12px;
     font-weight: 600;
     color: var(--text-color);
     min-width: 0;
     flex: 1 1 auto;
+}
+
+.term-session-item-status-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-width: 10px;
+    font-size: 12px;
+    line-height: 1;
+    color: #22c55e;
+}
+
+.term-session-item-status-dot.is-busy {
+    color: #ef4444;
+    animation: term-session-status-pulse 0.9s ease-in-out infinite;
+}
+
+.term-session-item-status-dot.is-ready {
+    color: #22c55e;
+}
+
+@keyframes term-session-status-pulse {
+    0% {
+        opacity: 0.35;
+        transform: scale(0.92);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1.08);
+    }
 }
 
 .term-session-item-conn {

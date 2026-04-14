@@ -9,7 +9,14 @@ import { waveEventSubscribe } from "@/app/store/wps";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import type { TermViewModel } from "@/app/view/term/term-model";
-import { atoms, getBlockComponentModel, getOverrideConfigAtom, getSettingsPrefixAtom, globalStore, WOS } from "@/store/global";
+import {
+    atoms,
+    getBlockComponentModel,
+    getOverrideConfigAtom,
+    getSettingsPrefixAtom,
+    globalStore,
+    WOS,
+} from "@/store/global";
 import { fireAndForget, useAtomValueSafe } from "@/util/util";
 import { computeBgStyleFromMeta } from "@/util/waveutil";
 import { ISearchOptions } from "@xterm/addon-search";
@@ -116,6 +123,10 @@ const TermResyncHandler = React.memo(({ blockId, model }: TerminalViewProps) => 
     return null;
 });
 
+function getSessionStatusClassName(hasRecentOutput: boolean): string {
+    return hasRecentOutput ? "is-busy" : "is-ready";
+}
+
 const TermSessionListItem = React.memo(
     ({
         sessionId,
@@ -132,7 +143,10 @@ const TermSessionListItem = React.memo(
     }) => {
         const t = useT();
         const [sessionBlock] = WOS.useWaveObjectValue<Block>(WOS.makeORef("block", sessionId));
+        const blockComponentModel = getBlockComponentModel(sessionId);
+        const sessionTermViewModel = blockComponentModel?.viewModel as TermViewModel | undefined;
         const [shellType, setShellType] = React.useState<string | null>(null);
+        const hasRecentOutput = jotai.useAtomValue(sessionTermViewModel?.busyAtom ?? jotai.atom(false));
 
         React.useEffect(() => {
             let cancelled = false;
@@ -144,11 +158,12 @@ const TermSessionListItem = React.memo(
             return () => {
                 cancelled = true;
             };
-        }, [sessionId, isActive]);
+        }, [sessionId]);
 
         const cwd = (sessionBlock?.meta?.["cmd:cwd"] as string) ?? "";
         const conn = sessionBlock?.meta?.connection ?? "local";
         const title = shellType || t("term.sessions.terminalWithIndex", { index: index + 1 });
+        const statusClassName = getSessionStatusClassName(hasRecentOutput);
 
         return (
             <div
@@ -166,6 +181,9 @@ const TermSessionListItem = React.memo(
             >
                 <div className="term-session-item-top">
                     <div className="term-session-item-title ellipsis">
+                        <span className={clsx("term-session-item-status-dot", statusClassName)} aria-hidden="true">
+                            ●
+                        </span>
                         {title}
                         {conn !== "local" ? <span className="term-session-item-conn"> · {conn}</span> : null}
                     </div>
@@ -482,6 +500,14 @@ const SingleTerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel
         );
         (window as any).term = termWrap;
         model.termRef.current = termWrap;
+        globalStore.set(model.shellIntegrationStatus, globalStore.get(termWrap.shellIntegrationStatusAtom));
+        globalStore.set(model.busyAtom, globalStore.get(termWrap.busyAtom));
+        const shellIntegrationStatusUnsub = globalStore.sub(termWrap.shellIntegrationStatusAtom, () => {
+            globalStore.set(model.shellIntegrationStatus, globalStore.get(termWrap.shellIntegrationStatusAtom));
+        });
+        const busyUnsub = globalStore.sub(termWrap.busyAtom, () => {
+            globalStore.set(model.busyAtom, globalStore.get(termWrap.busyAtom));
+        });
         const rszObs = new ResizeObserver(() => {
             termWrap.handleResize_debounced();
         });
@@ -497,6 +523,10 @@ const SingleTerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel
             }, 10);
         }
         return () => {
+            shellIntegrationStatusUnsub();
+            busyUnsub();
+            globalStore.set(model.shellIntegrationStatus, null);
+            globalStore.set(model.busyAtom, false);
             termWrap.dispose();
             rszObs.disconnect();
         };
@@ -631,7 +661,9 @@ const TerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel>) => 
 
             const clampWidth = (width: number): number => {
                 const maxFromRoot =
-                    rootWidth != null ? Math.max(minSidebarWidth, Math.floor(rootWidth - minMainWidth)) : maxSidebarWidth;
+                    rootWidth != null
+                        ? Math.max(minSidebarWidth, Math.floor(rootWidth - minMainWidth))
+                        : maxSidebarWidth;
                 const maxWidth = Math.min(maxSidebarWidth, maxFromRoot);
                 return Math.max(minSidebarWidth, Math.min(maxWidth, Math.round(width)));
             };
@@ -708,7 +740,10 @@ const TerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel>) => 
                         },
                     };
                     return (
-                        <div key={sessionId} className={clsx("term-multi-session", { active: activeSessionId === sessionId })}>
+                        <div
+                            key={sessionId}
+                            className={clsx("term-multi-session", { active: activeSessionId === sessionId })}
+                        >
                             <SubBlock nodeModel={sessionNodeModel} />
                         </div>
                     );
