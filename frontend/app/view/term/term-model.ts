@@ -1121,6 +1121,24 @@ export class TermViewModel implements ViewModel {
         return this.blockId;
     }
 
+    getResolvedActiveTermSessionId(): string {
+        const blockData = globalStore.get(this.blockAtom);
+        const sessionIds = this.getTermSessionIds(blockData);
+        const rawActiveSessionId = this.getActiveTermSessionId(blockData);
+        const hideParentSession = !!blockData?.meta?.[TermMultiSessionKey_HideParentSession];
+        const extraSessionIds = sessionIds.filter((id) => id !== this.blockId);
+
+        if (hideParentSession && rawActiveSessionId === this.blockId && extraSessionIds.length > 0) {
+            return extraSessionIds[extraSessionIds.length - 1];
+        }
+
+        if (sessionIds.includes(rawActiveSessionId)) {
+            return rawActiveSessionId;
+        }
+
+        return sessionIds[0] ?? this.blockId;
+    }
+
     private getTermSessionListOpen(blockData: Block | null): boolean {
         const raw = blockData?.meta?.[TermMultiSessionKey_SessionListOpen];
         if (typeof raw === "boolean") {
