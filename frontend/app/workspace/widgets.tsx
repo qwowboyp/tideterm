@@ -8,15 +8,7 @@ import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import type { TermViewModel } from "@/app/view/term/term-model";
 import { getLayoutModelForStaticTab } from "@/layout/index";
-import {
-    atoms,
-    createBlock,
-    getBlockComponentModel,
-    getFocusedBlockId,
-    getSettingsKeyAtom,
-    globalStore,
-    isDev,
-} from "@/store/global";
+import { atoms, createBlock, getBlockComponentModel, getSettingsKeyAtom, globalStore, isDev } from "@/store/global";
 import { fireAndForget, isBlank, makeIconClass } from "@/util/util";
 import {
     FloatingPortal,
@@ -306,22 +298,32 @@ const SavedCommandsFloatingWindow = memo(
         };
 
         const handleInject = (cmd: SavedCommand) => {
-            const blockId = getFocusedBlockId();
             if (!blockId) {
                 return;
             }
-            const bcm = getBlockComponentModel(blockId);
             if (bcm?.viewModel?.viewType === "term") {
-                const tvm = bcm.viewModel as TermViewModel;
+                const sourceTVM = bcm.viewModel as TermViewModel;
+                const targetBlockId = sourceTVM.getResolvedActiveTermSessionId();
+                const targetBCM = getBlockComponentModel(targetBlockId) ?? bcm;
+                const tvm = targetBCM.viewModel as TermViewModel;
                 const termWrap = tvm.termRef.current;
-                if (termWrap) {
+                tvm.giveFocus();
+                if (cmd.autoEnter) {
+                    tvm.sendDataToController(`${cmd.command}\r`);
+                } else if (termWrap) {
                     termWrap.pasteText(cmd.command);
-                    if (cmd.autoEnter) {
-                        termWrap.sendDataHandler?.("\r");
-                    }
                 }
             }
             onClose();
+        };
+
+        const handleCopy = async (cmd: SavedCommand) => {
+            try {
+                setErrorMessage(null);
+                await navigator.clipboard.writeText(cmd.command);
+            } catch (e: any) {
+                setErrorMessage(e?.message ? String(e.message) : String(e));
+            }
         };
 
         return (
@@ -399,40 +401,52 @@ const SavedCommandsFloatingWindow = memo(
                                     </div>
                                 ) : (
                                     <>
-                                        <div className="flex items-center justify-between">
-                                            <div
-                                                className={clsx(
-                                                    "font-medium text-sm truncate",
-                                                    isTerminalFocused
-                                                        ? "text-white cursor-pointer hover:text-accent"
-                                                        : "text-secondary cursor-not-allowed"
-                                                )}
-                                                onClick={() => isTerminalFocused && handleInject(cmd)}
-                                                title={
-                                                    isTerminalFocused
-                                                        ? t("term.savedCommands.injectTooltip")
-                                                        : t("term.savedCommands.focusFirst")
-                                                }
-                                            >
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="font-medium text-sm truncate text-white">
                                                 {cmd.title || cmd.command}
                                             </div>
-                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center gap-2 shrink-0">
                                                 <button
-                                                    className="p-1 text-secondary hover:text-white rounded hover:bg-hoverbg"
+                                                    className={clsx(
+                                                        "p-2 text-secondary rounded hover:bg-hoverbg transition-colors",
+                                                        isTerminalFocused
+                                                            ? "hover:text-white"
+                                                            : "cursor-not-allowed opacity-50"
+                                                    )}
+                                                    onClick={() => isTerminalFocused && handleInject(cmd)}
+                                                    title={
+                                                        isTerminalFocused
+                                                            ? t("term.savedCommands.injectTooltip")
+                                                            : t("term.savedCommands.focusFirst")
+                                                    }
+                                                >
+                                                    <i className="fa fa-solid fa-play text-sm"></i>
+                                                </button>
+                                                <button
+                                                    className="p-2 text-secondary hover:text-white rounded hover:bg-hoverbg transition-colors"
+                                                    onClick={() => handleCopy(cmd)}
+                                                    title={t("term.savedCommands.copy")}
+                                                >
+                                                    <i className="fa fa-solid fa-copy text-sm"></i>
+                                                </button>
+                                                <button
+                                                    className="p-2 text-secondary hover:text-white rounded hover:bg-hoverbg transition-colors"
                                                     onClick={() => {
                                                         setEditTitle(cmd.title);
                                                         setEditCommand(cmd.command);
                                                         setEditAutoEnter(cmd.autoEnter);
                                                         setEditingId(cmd.id);
                                                     }}
+                                                    title={t("term.savedCommands.edit")}
                                                 >
-                                                    <i className="fa fa-solid fa-pen text-xs"></i>
+                                                    <i className="fa fa-solid fa-pen text-sm"></i>
                                                 </button>
                                                 <button
-                                                    className="p-1 text-secondary hover:text-red-400 rounded hover:bg-hoverbg"
+                                                    className="p-2 text-secondary hover:text-red-400 rounded hover:bg-hoverbg transition-colors"
                                                     onClick={() => handleDelete(cmd.id)}
+                                                    title={t("term.savedCommands.delete")}
                                                 >
-                                                    <i className="fa fa-solid fa-trash text-xs"></i>
+                                                    <i className="fa fa-solid fa-trash text-sm"></i>
                                                 </button>
                                             </div>
                                         </div>

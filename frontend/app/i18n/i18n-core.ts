@@ -161,7 +161,7 @@ const en = {
     "term.tmuxSessions.prompt.alias": "Display name",
 
     // Saved commands sidebar
-    "term.savedCommands.viewName": "Saved Commands",
+    "term.savedCommands.viewName": "Commands",
     "term.savedCommands.title": "Saved Commands",
     "term.savedCommands.emptyTitle": "No saved commands yet",
     "term.savedCommands.emptyHint": "Add a command to reuse it later.",
@@ -170,6 +170,9 @@ const en = {
     "term.savedCommands.form.autoEnter": "Auto-enter",
     "term.savedCommands.noFocusedTerminal": "Focus a terminal to insert a command.",
     "term.savedCommands.insert": "Insert",
+    "term.savedCommands.copy": "Copy",
+    "term.savedCommands.edit": "Edit",
+    "term.savedCommands.delete": "Delete",
     "term.savedCommands.add": "Add Command",
     "term.savedCommands.injectTooltip": "Click to inject into terminal",
     "term.savedCommands.focusFirst": "Focus a terminal first",
@@ -610,7 +613,7 @@ const zhCN: Record<I18nKey, string> = {
     "term.tmuxSessions.prompt.alias": "显示名称",
 
     // Saved commands sidebar
-    "term.savedCommands.viewName": "已保存命令",
+    "term.savedCommands.viewName": "命令",
     "term.savedCommands.title": "已保存命令",
     "term.savedCommands.emptyTitle": "还没有已保存命令",
     "term.savedCommands.emptyHint": "添加一个命令，方便之后重复使用。",
@@ -619,6 +622,9 @@ const zhCN: Record<I18nKey, string> = {
     "term.savedCommands.form.autoEnter": "自动送出",
     "term.savedCommands.noFocusedTerminal": "请先聚焦终端机，才能插入命令。",
     "term.savedCommands.insert": "插入",
+    "term.savedCommands.copy": "复制",
+    "term.savedCommands.edit": "修改",
+    "term.savedCommands.delete": "删除",
     "term.savedCommands.add": "添加命令",
     "term.savedCommands.injectTooltip": "点击插入到终端机",
     "term.savedCommands.focusFirst": "请先聚焦终端机",
@@ -1055,7 +1061,7 @@ const zhTW: Record<I18nKey, string> = {
     "term.tmuxSessions.prompt.alias": "顯示名稱",
 
     // 已儲存指令側邊欄
-    "term.savedCommands.viewName": "已儲存的命令",
+    "term.savedCommands.viewName": "指令",
     "term.savedCommands.title": "已儲存的命令",
     "term.savedCommands.emptyTitle": "尚無已儲存的命令",
     "term.savedCommands.emptyHint": "新增一個命令，方便之後重複使用。",
@@ -1064,6 +1070,9 @@ const zhTW: Record<I18nKey, string> = {
     "term.savedCommands.form.autoEnter": "自動送出",
     "term.savedCommands.noFocusedTerminal": "請先聚焦終端機，才能插入命令。",
     "term.savedCommands.insert": "插入",
+    "term.savedCommands.copy": "複製",
+    "term.savedCommands.edit": "修改",
+    "term.savedCommands.delete": "刪除",
     "term.savedCommands.add": "新增命令",
     "term.savedCommands.injectTooltip": "點擊插入到終端機",
     "term.savedCommands.focusFirst": "請先聚焦終端機",
