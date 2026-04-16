@@ -44,6 +44,7 @@ const TermMultiSessionKey_ActiveSessionId = "term:activesessionid";
 const TermMultiSessionKey_SessionListOpen = "term:sessionlistopen";
 const TermMultiSessionKey_SessionListWidth = "term:sessionlistwidth";
 const TermMultiSessionKey_HideParentSession = "term:hideparentsession";
+const TermMultiSessionKey_SessionListCollapsed = "term:sessionlistcollapsed"; // opqlo [session側邊欄收折]-收折狀態key
 
 function parseDraggedFileUri(uri: string): { connection: string | null; path: string } | null {
     if (!uri) {
@@ -99,6 +100,11 @@ function getSessionListOpen(blockData: Block | null, hasMultipleSessions: boolea
         return raw;
     }
     return hasMultipleSessions || isNonMainActive;
+}
+
+function getSessionListCollapsed(blockData: Block | null): boolean {
+    // opqlo [session側邊欄收折]-讀取收折狀態
+    return !!blockData?.meta?.[TermMultiSessionKey_SessionListCollapsed];
 }
 
 const TermResyncHandler = React.memo(({ blockId, model }: TerminalViewProps) => {
@@ -681,6 +687,7 @@ const TerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel>) => 
     const hasMultiple = sessionIds.length > 1;
     const isNonMainActive = activeSessionId !== blockId;
     const listOpen = getSessionListOpen(blockData, hasMultiple, isNonMainActive);
+    const isCollapsed = listOpen && getSessionListCollapsed(blockData); // opqlo [session側邊欄收折]-讀取收折狀態
     const shouldRenderMulti = listOpen || isNonMainActive;
     const rootRef = React.useRef<HTMLDivElement>(null);
 
@@ -840,18 +847,35 @@ const TerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel>) => 
                     );
                 })}
             </div>
+            {/* opqlo [session側邊欄收折]-resizer跟隨sidebar滑動顯隱 */}
             {listOpen ? (
                 <div
-                    className={clsx("term-multi-resizer", { dragging: isDraggingSidebar })}
+                    className={clsx("term-multi-resizer", "term-sidebar-slide", {
+                        dragging: isDraggingSidebar,
+                        "term-sidebar-hidden": isCollapsed,
+                    })}
                     onPointerDown={startSidebarResize}
                     role="separator"
                     aria-orientation="vertical"
                     aria-label={t("term.sessions.listTitle")}
                 />
             ) : null}
+            {/* opqlo [session側邊欄收折]-sidebar常駐DOM用transform滑動 */}
             {listOpen ? (
-                <div className="term-multi-sidebar" style={{ width: `${sidebarWidth}px` }}>
-                    <div className="term-multi-sidebar-header">{t("term.sessions.listTitle")}</div>
+                <div
+                    className={clsx("term-multi-sidebar", "term-sidebar-slide", { "term-sidebar-hidden": isCollapsed })}
+                    style={{ width: `${sidebarWidth}px` }}
+                >
+                    <div className="term-multi-sidebar-header">
+                        {t("term.sessions.listTitle")}
+                        <button
+                            className="term-sidebar-collapse-btn"
+                            title={t("term.sessions.showList")}
+                            onClick={() => void model.setTermSessionListCollapsed(true)}
+                        >
+                            <i className="fa fa-solid fa-chevron-right" />
+                        </button>
+                    </div>
                     <div className="term-multi-sidebar-list">
                         {sessionIds.map((sessionId, idx) => {
                             return (
@@ -898,6 +922,41 @@ const TerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel>) => 
                             );
                         })}
                     </div>
+                </div>
+            ) : null}
+            {/* opqlo [session側邊欄收折]-collapsed常駐DOM用transform滑動 */}
+            {listOpen ? (
+                <div
+                    className={clsx("term-collapsed-sidebar", "term-sidebar-slide", {
+                        "term-sidebar-hidden": !isCollapsed,
+                    })}
+                >
+                    <div
+                        className="term-collapsed-expand-btn"
+                        onClick={() => void model.setTermSessionListCollapsed(false)}
+                        title={t("term.sessions.showList")}
+                    >
+                        <i className="fa fa-solid fa-chevron-left" />
+                    </div>
+                    {sessionIds.map((sessionId, idx) => {
+                        const blockComponentModel = getBlockComponentModel(sessionId);
+                        const sessionTermViewModel = blockComponentModel?.viewModel as TermViewModel | undefined;
+                        const hasRecentOutput = jotai.useAtomValue(sessionTermViewModel?.busyAtom ?? jotai.atom(false));
+                        const statusClassName = getSessionStatusClassName(hasRecentOutput);
+                        const isActive = activeSessionId === sessionId;
+                        const displayIndex = showParentSession ? idx + 1 : idx + 1;
+                        return (
+                            <div
+                                key={sessionId}
+                                className={clsx("term-collapsed-item", { active: isActive })}
+                                onClick={() => void model.setActiveTermSessionId(sessionId)}
+                                title={t("term.sessions.terminalWithIndex", { index: displayIndex })}
+                            >
+                                <span className={clsx("term-collapsed-dot", statusClassName)}>●</span>
+                                <span className="term-collapsed-num">{displayIndex}</span>
+                            </div>
+                        );
+                    })}
                 </div>
             ) : null}
         </div>

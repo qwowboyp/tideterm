@@ -49,6 +49,20 @@ function isLocalConnectionName(connection: string | null | undefined): boolean {
     return connection.startsWith("local:");
 }
 
+/**
+ * opqlo 字體大小修復-將設定值正規化為可用字體大小數字
+ */
+function normalizeTermFontSize(value: unknown): number | null {
+    if (typeof value === "number") {
+        return Number.isFinite(value) ? value : null;
+    }
+    if (typeof value === "string" && value.trim() !== "") {
+        const parsedValue = Number(value);
+        return Number.isFinite(parsedValue) ? parsedValue : null;
+    }
+    return null;
+}
+
 const TermMultiSessionKey_IsSession = "term:issession";
 const TermMultiSessionKey_ParentBlockId = "term:parentblockid";
 const TermMultiSessionKey_SessionIds = "term:sessionids";
@@ -56,6 +70,7 @@ const TermMultiSessionKey_ActiveSessionId = "term:activesessionid";
 const TermMultiSessionKey_SessionListOpen = "term:sessionlistopen";
 const TermMultiSessionKey_SessionListWidth = "term:sessionlistwidth";
 const TermMultiSessionKey_HideParentSession = "term:hideparentsession";
+const TermMultiSessionKey_SessionListCollapsed = "term:sessionlistcollapsed"; // opqlo [session側邊欄收折]-收折狀態key
 
 export class TermViewModel implements ViewModel {
     viewType: string;
@@ -312,11 +327,12 @@ export class TermViewModel implements ViewModel {
             return jotai.atom<number>((get) => {
                 const blockData = get(this.blockAtom);
                 const fsSettingsAtom = getSettingsKeyAtom("term:fontsize");
-                const settingsFontSize = get(fsSettingsAtom);
+                const settingsFontSize = normalizeTermFontSize(get(fsSettingsAtom));
                 const connName = blockData?.meta?.connection;
                 const fullConfig = get(atoms.fullConfigAtom);
-                const connFontSize = fullConfig?.connections?.[connName]?.["term:fontsize"];
-                const rtnFontSize = blockData?.meta?.["term:fontsize"] ?? connFontSize ?? settingsFontSize ?? 12;
+                const connFontSize = normalizeTermFontSize(fullConfig?.connections?.[connName]?.["term:fontsize"]);
+                const blockFontSize = normalizeTermFontSize(blockData?.meta?.["term:fontsize"]);
+                const rtnFontSize = blockFontSize ?? connFontSize ?? settingsFontSize ?? 12;
                 if (typeof rtnFontSize != "number" || isNaN(rtnFontSize) || rtnFontSize < 4 || rtnFontSize > 64) {
                     return 12;
                 }
@@ -1181,6 +1197,13 @@ export class TermViewModel implements ViewModel {
         }
         await services.ObjectService.UpdateObjectMeta(WOS.makeORef("block", this.blockId), {
             [TermMultiSessionKey_SessionListWidth]: Math.round(next),
+        });
+    }
+
+    async setTermSessionListCollapsed(collapsed: boolean) {
+        // opqlo [session側邊欄收折]-設定收折狀態
+        await services.ObjectService.UpdateObjectMeta(WOS.makeORef("block", this.blockId), {
+            [TermMultiSessionKey_SessionListCollapsed]: collapsed,
         });
     }
 
