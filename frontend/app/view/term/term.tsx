@@ -25,6 +25,7 @@ import debug from "debug";
 import * as jotai from "jotai";
 import * as React from "react";
 import { useDrop } from "react-dnd";
+import ReactDOM from "react-dom";
 import { TermStickers } from "./termsticker";
 import { TermThemeUpdater } from "./termtheme";
 import { computeTheme } from "./termutil";
@@ -264,6 +265,78 @@ const TermSessionListItem = React.memo(
                 </div>
                 <div className="term-session-item-subtitle ellipsis">{cwd || "\u00A0"}</div>
             </div>
+        );
+    }
+);
+
+const TermCollapsedItem = React.memo(
+    ({
+        sessionId,
+        index,
+        isActive,
+        showParentSession,
+        onSelect,
+    }: {
+        sessionId: string;
+        index: number;
+        isActive: boolean;
+        showParentSession: boolean;
+        onSelect: () => void;
+    }) => {
+        const t = useT();
+        const itemRef = React.useRef<HTMLDivElement>(null);
+        const [showTip, setShowTip] = React.useState(false);
+        const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+        const blockComponentModel = getBlockComponentModel(sessionId);
+        const sessionTermViewModel = blockComponentModel?.viewModel as TermViewModel | undefined;
+        const hasRecentOutput = jotai.useAtomValue(sessionTermViewModel?.busyAtom ?? jotai.atom(false));
+        const [sessionBlock] = WOS.useWaveObjectValue<Block>(WOS.makeORef("block", sessionId));
+        const statusClassName = getSessionStatusClassName(hasRecentOutput);
+        const displayIndex = showParentSession ? index + 1 : index + 1;
+        const cwd = (sessionBlock?.meta?.["cmd:cwd"] as string) ?? "";
+        const label = t("term.sessions.terminalWithIndex", { index: displayIndex });
+        const tooltip = cwd ? `${label}\n${cwd}` : label;
+
+        const handleMouseEnter = React.useCallback(() => {
+            timerRef.current = setTimeout(() => setShowTip(true), 500);
+        }, []);
+        const handleMouseLeave = React.useCallback(() => {
+            if (timerRef.current) clearTimeout(timerRef.current);
+            timerRef.current = null;
+            setShowTip(false);
+        }, []);
+
+        const tipStyle = React.useMemo((): React.CSSProperties => {
+            if (!showTip || !itemRef.current) return { display: "none" };
+            const rect = itemRef.current.getBoundingClientRect();
+            return {
+                position: "fixed",
+                right: window.innerWidth - rect.left + 6,
+                top: rect.top + rect.height / 2,
+                transform: "translateY(-50%)",
+            };
+        }, [showTip]);
+
+        return (
+            <>
+                <div
+                    ref={itemRef}
+                    className={clsx("term-collapsed-item", { active: isActive })}
+                    onClick={onSelect}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                >
+                    <span className={clsx("term-collapsed-dot", statusClassName)}>●</span>
+                    <span className="term-collapsed-num">{displayIndex}</span>
+                </div>
+                {showTip &&
+                    ReactDOM.createPortal(
+                        <div className="term-collapsed-tooltip" style={tipStyle}>
+                            {tooltip}
+                        </div>,
+                        document.body
+                    )}
+            </>
         );
     }
 );
@@ -938,25 +1011,16 @@ const TerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel>) => 
                     >
                         <i className="fa fa-solid fa-chevron-left" />
                     </div>
-                    {sessionIds.map((sessionId, idx) => {
-                        const blockComponentModel = getBlockComponentModel(sessionId);
-                        const sessionTermViewModel = blockComponentModel?.viewModel as TermViewModel | undefined;
-                        const hasRecentOutput = jotai.useAtomValue(sessionTermViewModel?.busyAtom ?? jotai.atom(false));
-                        const statusClassName = getSessionStatusClassName(hasRecentOutput);
-                        const isActive = activeSessionId === sessionId;
-                        const displayIndex = showParentSession ? idx + 1 : idx + 1;
-                        return (
-                            <div
-                                key={sessionId}
-                                className={clsx("term-collapsed-item", { active: isActive })}
-                                onClick={() => void model.setActiveTermSessionId(sessionId)}
-                                title={t("term.sessions.terminalWithIndex", { index: displayIndex })}
-                            >
-                                <span className={clsx("term-collapsed-dot", statusClassName)}>●</span>
-                                <span className="term-collapsed-num">{displayIndex}</span>
-                            </div>
-                        );
-                    })}
+                    {sessionIds.map((sessionId, idx) => (
+                        <TermCollapsedItem
+                            key={sessionId}
+                            sessionId={sessionId}
+                            index={idx}
+                            isActive={activeSessionId === sessionId}
+                            showParentSession={showParentSession}
+                            onSelect={() => void model.setActiveTermSessionId(sessionId)}
+                        />
+                    ))}
                 </div>
             ) : null}
         </div>
