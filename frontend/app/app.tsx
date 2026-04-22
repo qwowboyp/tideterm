@@ -7,7 +7,7 @@ import { getAppLanguageFromSettings, t as tCore } from "@/app/i18n/i18n-core";
 import { getTabModelByTabId, TabModelContext } from "@/app/store/tab-model";
 import { Workspace } from "@/app/workspace/workspace";
 import { ContextMenuModel } from "@/store/contextmenu";
-import { atoms, createBlock, getSettingsPrefixAtom, globalStore, isDev, removeFlashError } from "@/store/global";
+import { atoms, createBlock, getBlockComponentModel, getSettingsPrefixAtom, globalStore, isDev, removeFlashError } from "@/store/global";
 import { appHandleKeyDown, keyboardMouseDownHandler } from "@/store/keymodel";
 import * as WOS from "@/store/wos";
 import { getElemAsStr } from "@/util/focusutil";
@@ -147,6 +147,21 @@ async function handleContextMenu(e: React.MouseEvent<HTMLDivElement>) {
                         });
                     },
                 });
+    }
+    // opqlo 重啟終端機-當終端機卡住時可快速重啟
+    if (isTermBlock && blockId) {
+        const bcm = getBlockComponentModel(blockId);
+        if (bcm?.viewModel && typeof (bcm.viewModel as any).forceRestartController === "function") {
+            if (menu.length > 0) {
+                menu.push({ type: "separator" });
+            }
+            menu.push({
+                label: t("contextmenu.restartTerminal"),
+                click: () => {
+                    (bcm.viewModel as any).forceRestartController();
+                },
+            });
+        }
     }
     if (clipboardURL) {
         if (menu.length > 0) {

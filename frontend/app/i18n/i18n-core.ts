@@ -86,6 +86,7 @@ const en = {
     // App context menu
     "contextmenu.openClipboardUrl": "Open Clipboard URL ({host})",
     "contextmenu.openCurrentDirectoryInNewBlock": "Open Current Directory in New Block",
+    "contextmenu.restartTerminal": "Restart Terminal",
 
     // Block header context menu
     "blockmenu.magnifyBlock": "Magnify Block",
@@ -538,6 +539,7 @@ const zhCN: Record<I18nKey, string> = {
     // App context menu
     "contextmenu.openClipboardUrl": "打开剪贴板 URL（{host}）",
     "contextmenu.openCurrentDirectoryInNewBlock": "在新块中打开当前目录",
+    "contextmenu.restartTerminal": "重启终端",
 
     // Block header context menu
     "blockmenu.magnifyBlock": "放大块",
@@ -986,6 +988,7 @@ const zhTW: Record<I18nKey, string> = {
     // App context menu
     "contextmenu.openClipboardUrl": "開啟剪貼簿 URL（{host}）",
     "contextmenu.openCurrentDirectoryInNewBlock": "在新區塊中開啟目前目錄",
+    "contextmenu.restartTerminal": "重新啟動終端機",
 
     // Block header context menu
     "blockmenu.magnifyBlock": "放大區塊",
