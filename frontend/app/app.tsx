@@ -150,7 +150,9 @@ async function handleContextMenu(e: React.MouseEvent<HTMLDivElement>) {
     }
     // opqlo 重啟終端機-當終端機卡住時可快速重啟
     if (isTermBlock && blockId) {
-        const bcm = getBlockComponentModel(blockId);
+        const activeSessionId = blockData?.meta?.["term:activesessionid"] as string;
+        const targetBlockId = activeSessionId || blockId;
+        const bcm = getBlockComponentModel(targetBlockId);
         if (bcm?.viewModel && typeof (bcm.viewModel as any).forceRestartController === "function") {
             if (menu.length > 0) {
                 menu.push({ type: "separator" });
