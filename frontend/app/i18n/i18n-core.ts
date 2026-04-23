@@ -56,6 +56,10 @@ const en = {
     "settings.ctrlmSubmit.description":
         "When enabled, CTRL+M will act as Enter and send the AI chat message. Disable this if you use an IME (e.g., Zhuyin/Bopomofo) and frequently mistype CTRL+M when typing commas.",
     "settings.ctrlmSubmit.toggle": "Allow CTRL+M to send messages",
+    "settings.windowBlur": "Window Blur",
+    "settings.windowBlur.description":
+        "Enable acrylic (Windows) or vibrancy (macOS) blur effect for the window. Requires a restart to take full effect.",
+    "settings.windowBlur.toggle": "Enable window blur effect",
 
     // Workspace / widgets
     "workspace.localWaveApps": "Local Apps",
@@ -509,6 +513,10 @@ const zhCN: Record<I18nKey, string> = {
     "settings.ctrlmSubmit.description":
         "启用后，CTRL+M 会作为 Enter 发送 AI 聊天消息。如果您使用注音等输入法，经常在输入逗号时误触 CTRL+M，可以关闭此选项。",
     "settings.ctrlmSubmit.toggle": "允许 CTRL+M 发送消息",
+    "settings.windowBlur": "窗口模糊",
+    "settings.windowBlur.description":
+        "启用窗口的亚克力模糊（Windows）或透明模糊（macOS）效果。需要重新启动才能完全生效。",
+    "settings.windowBlur.toggle": "启用窗口模糊效果",
 
     // Workspace / widgets
     "workspace.localWaveApps": "本地应用",
@@ -958,6 +966,10 @@ const zhTW: Record<I18nKey, string> = {
     "settings.ctrlmSubmit.description":
         "啟用後，CTRL+M 會作為 Enter 送出 AI 聊天訊息。如果您使用注音等輸入法，經常在輸入逗號時誤觸 CTRL+M，可以關閉此選項。",
     "settings.ctrlmSubmit.toggle": "允許 CTRL+M 送出訊息",
+    "settings.windowBlur": "視窗模糊",
+    "settings.windowBlur.description":
+        "啟用視窗的壓克力模糊（Windows）或透明模糊（macOS）效果。需要重新啟動才能完全生效。",
+    "settings.windowBlur.toggle": "啟用視窗模糊效果",
 
     // Workspace / widgets
     "workspace.localWaveApps": "本機應用程式",

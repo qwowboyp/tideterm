@@ -19,6 +19,7 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
 
     const remoteTmuxResumeEnabled = settings?.["term:remotetmuxresume"] ?? true;
     const ctrlmSubmitEnabled = settings?.["term:ctrlmsubmit"] ?? false;
+    const windowBlurEnabled = settings?.["window:blur"] ?? false;
     const configuredFontSize = typeof settings?.["term:fontsize"] === "number" ? settings["term:fontsize"] : 12;
     const [fontSize, setFontSize] = useState(String(configuredFontSize));
 
@@ -72,6 +73,21 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
 
         try {
             await RpcApi.SetConfigCommand(TabRpcClient, { "term:ctrlmsubmit": enabled });
+            await refreshConfigAndReloadSelectedFile();
+        } catch (e: any) {
+            globalStore.set(model.errorMessageAtom, e?.message ? String(e.message) : String(e));
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const setWindowBlur = async (enabled: boolean) => {
+        if (enabled === windowBlurEnabled || isUpdating) return;
+        setIsUpdating(true);
+        globalStore.set(model.errorMessageAtom, null);
+
+        try {
+            await RpcApi.SetConfigCommand(TabRpcClient, { "window:blur": enabled });
             await refreshConfigAndReloadSelectedFile();
         } catch (e: any) {
             globalStore.set(model.errorMessageAtom, e?.message ? String(e.message) : String(e));
@@ -217,6 +233,23 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
                         onChange={(e) => setCtrlmSubmit(e.target.checked)}
                     />
                     <span className="text-sm">{t("settings.ctrlmSubmit.toggle")}</span>
+                </label>
+            </div>
+
+            <div className="flex flex-col gap-1">
+                <div className="text-lg font-semibold">{t("settings.windowBlur")}</div>
+                <div className="text-sm text-muted-foreground">{t("settings.windowBlur.description")}</div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        checked={windowBlurEnabled}
+                        disabled={isUpdating}
+                        onChange={(e) => setWindowBlur(e.target.checked)}
+                    />
+                    <span className="text-sm">{t("settings.windowBlur.toggle")}</span>
                 </label>
             </div>
         </div>
