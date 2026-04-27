@@ -19,7 +19,8 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
 
     const remoteTmuxResumeEnabled = settings?.["term:remotetmuxresume"] ?? true;
     const ctrlmSubmitEnabled = settings?.["term:ctrlmsubmit"] ?? false;
-    const windowBlurEnabled = settings?.["window:blur"] ?? false;
+    const configuredOpacity = typeof settings?.["window:opacity"] === "number" ? settings["window:opacity"] : 0.8;
+    const opacityPercent = Math.round(configuredOpacity * 100);
     const configuredFontSize = typeof settings?.["term:fontsize"] === "number" ? settings["term:fontsize"] : 12;
     const [fontSize, setFontSize] = useState(String(configuredFontSize));
 
@@ -81,13 +82,16 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
         }
     };
 
-    const setWindowBlur = async (enabled: boolean) => {
-        if (enabled === windowBlurEnabled || isUpdating) return;
+    const setOpacityPercent = async (percent: number) => {
+        const clampedPercent = Math.round(Math.max(0, Math.min(100, percent)));
+        const newOpacity = clampedPercent / 100;
+        if (newOpacity === configuredOpacity || isUpdating) return;
         setIsUpdating(true);
         globalStore.set(model.errorMessageAtom, null);
 
         try {
-            await RpcApi.SetConfigCommand(TabRpcClient, { "window:blur": enabled });
+            const isBlur = clampedPercent < 100;
+            await RpcApi.SetConfigCommand(TabRpcClient, { "window:opacity": newOpacity, "window:blur": isBlur });
             await refreshConfigAndReloadSelectedFile();
         } catch (e: any) {
             globalStore.set(model.errorMessageAtom, e?.message ? String(e.message) : String(e));
@@ -237,20 +241,24 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
             </div>
 
             <div className="flex flex-col gap-1">
-                <div className="text-lg font-semibold">{t("settings.windowBlur")}</div>
-                <div className="text-sm text-muted-foreground">{t("settings.windowBlur.description")}</div>
+                <div className="text-lg font-semibold">{t("settings.windowOpacity")}</div>
+                <div className="text-sm text-muted-foreground">{t("settings.windowOpacity.description")}</div>
             </div>
 
             <div className="flex flex-col gap-3">
-                <label className="flex items-center gap-3 cursor-pointer">
+                <div className="flex items-center gap-3">
                     <input
-                        type="checkbox"
-                        checked={windowBlurEnabled}
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={10}
+                        value={opacityPercent}
                         disabled={isUpdating}
-                        onChange={(e) => setWindowBlur(e.target.checked)}
+                        onChange={(e) => setOpacityPercent(Number(e.target.value))}
+                        className="flex-1"
                     />
-                    <span className="text-sm">{t("settings.windowBlur.toggle")}</span>
-                </label>
+                    <span className="text-sm font-mono w-10 text-right">{opacityPercent}%</span>
+                </div>
             </div>
         </div>
     );
