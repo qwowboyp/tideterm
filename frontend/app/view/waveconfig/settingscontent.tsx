@@ -19,8 +19,6 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
 
     const remoteTmuxResumeEnabled = settings?.["term:remotetmuxresume"] ?? true;
     const ctrlmSubmitEnabled = settings?.["term:ctrlmsubmit"] ?? false;
-    const configuredOpacity = typeof settings?.["window:opacity"] === "number" ? settings["window:opacity"] : 0.8;
-    const opacityPercent = Math.round(configuredOpacity * 100);
     const configuredFontSize = typeof settings?.["term:fontsize"] === "number" ? settings["term:fontsize"] : 12;
     const [fontSize, setFontSize] = useState(String(configuredFontSize));
 
@@ -74,29 +72,6 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
 
         try {
             await RpcApi.SetConfigCommand(TabRpcClient, { "term:ctrlmsubmit": enabled });
-            await refreshConfigAndReloadSelectedFile();
-        } catch (e: any) {
-            globalStore.set(model.errorMessageAtom, e?.message ? String(e.message) : String(e));
-        } finally {
-            setIsUpdating(false);
-        }
-    };
-
-    const setOpacityPercent = async (percent: number) => {
-        const clampedPercent = Math.round(Math.max(0, Math.min(100, percent)));
-        const newOpacity = clampedPercent / 100;
-        const newTermTransparency = 1 - newOpacity;
-        if (newOpacity === configuredOpacity || isUpdating) return;
-        setIsUpdating(true);
-        globalStore.set(model.errorMessageAtom, null);
-
-        try {
-            const isBlur = clampedPercent < 100;
-            await RpcApi.SetConfigCommand(TabRpcClient, {
-                "window:opacity": newOpacity,
-                "window:blur": isBlur,
-                "term:transparency": newTermTransparency,
-            });
             await refreshConfigAndReloadSelectedFile();
         } catch (e: any) {
             globalStore.set(model.errorMessageAtom, e?.message ? String(e.message) : String(e));
@@ -243,27 +218,6 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
                     />
                     <span className="text-sm">{t("settings.ctrlmSubmit.toggle")}</span>
                 </label>
-            </div>
-
-            <div className="flex flex-col gap-1">
-                <div className="text-lg font-semibold">{t("settings.windowOpacity")}</div>
-                <div className="text-sm text-muted-foreground">{t("settings.windowOpacity.description")}</div>
-            </div>
-
-            <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                    <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        step={10}
-                        value={opacityPercent}
-                        disabled={isUpdating}
-                        onChange={(e) => setOpacityPercent(Number(e.target.value))}
-                        className="flex-1"
-                    />
-                    <span className="text-sm font-mono w-10 text-right">{opacityPercent}%</span>
-                </div>
             </div>
         </div>
     );
