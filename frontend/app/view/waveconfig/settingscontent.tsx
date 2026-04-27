@@ -85,13 +85,18 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
     const setOpacityPercent = async (percent: number) => {
         const clampedPercent = Math.round(Math.max(0, Math.min(100, percent)));
         const newOpacity = clampedPercent / 100;
+        const newTermTransparency = 1 - newOpacity;
         if (newOpacity === configuredOpacity || isUpdating) return;
         setIsUpdating(true);
         globalStore.set(model.errorMessageAtom, null);
 
         try {
             const isBlur = clampedPercent < 100;
-            await RpcApi.SetConfigCommand(TabRpcClient, { "window:opacity": newOpacity, "window:blur": isBlur });
+            await RpcApi.SetConfigCommand(TabRpcClient, {
+                "window:opacity": newOpacity,
+                "window:blur": isBlur,
+                "term:transparency": newTermTransparency,
+            });
             await refreshConfigAndReloadSelectedFile();
         } catch (e: any) {
             globalStore.set(model.errorMessageAtom, e?.message ? String(e.message) : String(e));

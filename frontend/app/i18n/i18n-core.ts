@@ -58,7 +58,7 @@ const en = {
     "settings.ctrlmSubmit.toggle": "Allow CTRL+M to send messages",
     "settings.windowOpacity": "Window Transparency",
     "settings.windowOpacity.description":
-        "Adjust the background transparency percentage of the terminal window. Lower values make the background more transparent. Applies immediately.",
+        "Adjust terminal background opacity in 10% steps. Lower values make the terminal more transparent. Applies immediately.",
 
     // Workspace / widgets
     "workspace.localWaveApps": "Local Apps",
@@ -514,7 +514,7 @@ const zhCN: Record<I18nKey, string> = {
     "settings.ctrlmSubmit.toggle": "允许 CTRL+M 发送消息",
     "settings.windowOpacity": "视窗透明度",
     "settings.windowOpacity.description":
-        "调整终端窗口的背景透明度百分比。数值越低背景越透明。修改后立即生效。",
+        "以 10% 为一级调整终端背景不透明度。数值越低，终端越透明。修改后立即生效。",
 
     // Workspace / widgets
     "workspace.localWaveApps": "本地应用",
@@ -966,7 +966,7 @@ const zhTW: Record<I18nKey, string> = {
     "settings.ctrlmSubmit.toggle": "允許 CTRL+M 送出訊息",
     "settings.windowOpacity": "視窗透明度",
     "settings.windowOpacity.description":
-        "調整終端機視窗的背景透明度百分比。數值越低背景越透明。修改後立即生效。",
+        "以 10% 為一級調整終端機背景不透明度。數值越低，終端機越透明。修改後立即生效。",
 
     // Workspace / widgets
     "workspace.localWaveApps": "本機應用程式",
