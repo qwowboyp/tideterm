@@ -541,6 +541,8 @@ export class TermWrap {
     // For remote SSH, allow a slightly larger coalescing window so split control sequences
     // (e.g. erase + redraw) land in the same render frame and don't visibly flicker.
     private readonly outputFlushMinDelayRemoteMs: number = 32;
+    // opqlo GPU優化-幀跳躍計數器
+    private outputFlushFrameCount: number = 0;
     private readonly outputFlushMaxBufferedBytes: number = 256 * 1024;
 
     private handleNativeDragOver = (e: DragEvent) => {
@@ -965,7 +967,7 @@ export class TermWrap {
 
     private scheduleOutputFlush() {
         if (this.outputFlushRafId != null) {
-            return; // Already scheduled
+            return; // opqlo GPU優化-已排程刷新
         }
         if (this.outputBatchStartTs == null) {
             this.outputBatchStartTs = performance.now();
@@ -974,8 +976,18 @@ export class TermWrap {
             this.outputFlushRafId = null;
             if (this.outputBuffer.length === 0) {
                 this.outputBatchStartTs = null;
+                this.outputFlushFrameCount = 0; // opqlo GPU優化-重置幀計數
                 return;
             }
+
+            // opqlo GPU優化-持續輸出時跳幀降低GPU負載
+            // Skip every other frame during sustained heavy output (target ~30fps)
+            this.outputFlushFrameCount++;
+            if (this.outputFlushFrameCount <= 1) {
+                this.outputFlushRafId = window.requestAnimationFrame(tick);
+                return;
+            }
+            this.outputFlushFrameCount = 0;
 
             // Only apply the larger coalescing window for non-local connections and for output
             // that looks like a cursor-up/erase/redraw cycle (escape sequences or CR without newline).

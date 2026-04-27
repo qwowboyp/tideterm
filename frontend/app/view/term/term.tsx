@@ -622,7 +622,7 @@ const SingleTerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel
                 drawBoldTextInBrightColors: false,
                 fontWeight: "normal",
                 fontWeightBold: "bold",
-                allowTransparency: true,
+                allowTransparency: false,
                 scrollback: termScrollback,
                 allowProposedApi: true, // Required by @xterm/addon-search to enable search functionality and decorations
                 ignoreBracketedPasteMode: !termAllowBPM,

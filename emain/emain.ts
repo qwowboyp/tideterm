@@ -322,6 +322,11 @@ globalEvents.on("windows-updated", () => {
 });
 
 async function appMain() {
+    // opqlo GPU優化-Windows DWM合成降低
+    if (unamePlatform === "win32") {
+        // opqlo GPU優化-禁用原生視窗遮蔽計算，減少DWM不必要的合成工作
+        electronApp.commandLine.appendSwitch("disable-features", "CalculateNativeWinOcclusion");
+    }
     // Set disableHardwareAcceleration as early as possible, if required.
     const launchSettings = getLaunchSettings();
     if (launchSettings?.["window:disablehardwareacceleration"]) {
