@@ -26,6 +26,8 @@ import { CenteredDiv } from "./element/quickelems";
 import { NotificationBubbles } from "./notification/notificationbubbles";
 import { WindowTitleManager } from "./window/windowtitle";
 import { ProxyDock } from "./view/proxy/proxy-dock";
+import { WindowResizeHandles } from "./windowresizehandles";
+import { WindowTitleControls } from "./windowtitlecontrols";
 
 import "./app.scss";
 
@@ -187,17 +189,22 @@ async function handleContextMenu(e: React.MouseEvent<HTMLDivElement>) {
 function AppSettingsUpdater() {
     const windowSettingsAtom = getSettingsPrefixAtom("window");
     const windowSettings = useAtomValue(windowSettingsAtom);
+    const termSettingsAtom = getSettingsPrefixAtom("term");
+    const termSettings = useAtomValue(termSettingsAtom);
     useEffect(() => {
         const isTransparentOrBlur =
             (windowSettings?.["window:transparent"] || windowSettings?.["window:blur"]) ?? false;
+        const termTransparency = termSettings?.["term:transparency"] ?? 0;
+        const hasTermTransparency = termTransparency > 0;
         const opacity = util.boundNumber(windowSettings?.["window:opacity"] ?? 0.8, 0, 1);
         const baseBgColor = windowSettings?.["window:bgcolor"];
         const mainDiv = document.getElementById("main");
         // console.log("window settings", windowSettings, isTransparentOrBlur, opacity, baseBgColor, mainDiv);
         if (isTransparentOrBlur) {
             mainDiv.classList.add("is-transparent");
-            if (opacity != null) {
-                document.body.style.setProperty("--window-opacity", `${opacity}`);
+            const effectiveOpacity = hasTermTransparency ? 1 - termTransparency : opacity;
+            if (effectiveOpacity != null) {
+                document.body.style.setProperty("--window-opacity", `${effectiveOpacity}`);
             } else {
                 document.body.style.removeProperty("--window-opacity");
             }
@@ -210,7 +217,7 @@ function AppSettingsUpdater() {
         } else {
             document.body.style.removeProperty("--main-bg-color");
         }
-    }, [windowSettings]);
+    }, [windowSettings, termSettings]);
     return null;
 }
 
@@ -342,6 +349,8 @@ const AppInner = () => {
     const client = useAtomValue(ClientModel.getInstance().clientAtom);
     const windowData = useAtomValue(GlobalModel.getInstance().windowDataAtom);
     const isFullScreen = useAtomValue(atoms.isFullScreen);
+    const settings = useAtomValue(atoms.settingsAtom);
+    const isTransparent = settings?.["window:transparent"] === true;
 
     if (client == null || windowData == null) {
         return (
@@ -357,10 +366,13 @@ const AppInner = () => {
             className={clsx("flex flex-col w-full h-full", PLATFORM, {
                 fullscreen: isFullScreen,
                 "prefers-reduced-motion": prefersReducedMotion,
+                "transparent-window": PLATFORM === "win32" && isTransparent,
             })}
             onContextMenu={handleContextMenu}
         >
             <AppBackground />
+            <WindowResizeHandles />
+            <WindowTitleControls />
             <AppKeyHandlers />
             <AppFocusHandler />
             <AppSettingsUpdater />

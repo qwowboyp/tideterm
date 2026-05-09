@@ -12,6 +12,10 @@
     -webkit-app-region: drag;
     height: max(33px, calc(33px * var(--zoomfactor-inv)));
 
+    .win32.transparent-window & {
+        width: calc(100vw - 138px);
+    }
+
     button {
         -webkit-app-region: no-drag;
     }
