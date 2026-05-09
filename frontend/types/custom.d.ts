@@ -136,6 +136,13 @@ declare global {
         nativePaste: () => void; // native-paste
         openBuilder: (appId?: string) => void; // open-builder
         setBuilderWindowAppId: (appId: string) => void; // set-builder-window-appid
+        getTransparentWindowBounds: () => Electron.Rectangle | null; // get-transparent-window-bounds
+        resizeTransparentWindow: (bounds: Electron.Rectangle) => void; // resize-transparent-window
+        minimizeWindow: () => void; // minimize-window
+        maximizeWindow: () => void; // maximize-window
+        unmaximizeWindow: () => void; // unmaximize-window
+        closeWindow: () => void; // close-window
+        isMaximized: () => boolean; // is-maximized
         doRefresh: () => void; // do-refresh
     };
 

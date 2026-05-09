@@ -78,6 +78,13 @@ contextBridge.exposeInMainWorld("api", {
     nativePaste: () => ipcRenderer.send("native-paste"),
     openBuilder: (appId?: string) => ipcRenderer.send("open-builder", appId),
     setBuilderWindowAppId: (appId: string) => ipcRenderer.send("set-builder-window-appid", appId),
+    getTransparentWindowBounds: () => ipcRenderer.sendSync("get-transparent-window-bounds"),
+    resizeTransparentWindow: (bounds: Electron.Rectangle) => ipcRenderer.send("resize-transparent-window", bounds),
+    minimizeWindow: () => ipcRenderer.send("minimize-window"),
+    maximizeWindow: () => ipcRenderer.send("maximize-window"),
+    unmaximizeWindow: () => ipcRenderer.send("unmaximize-window"),
+    closeWindow: () => ipcRenderer.send("close-window"),
+    isMaximized: () => ipcRenderer.sendSync("is-maximized"),
     doRefresh: () => ipcRenderer.send("do-refresh"),
 });
 

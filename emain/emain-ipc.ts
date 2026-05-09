@@ -25,6 +25,7 @@ const electronApp = electron.app;
 
 let webviewFocusId: number = null;
 let webviewKeys: string[] = [];
+const customMaximizeRestoreBounds = new Map<number, Electron.Rectangle>();
 
 export function openBuilderWindow(appId?: string) {
     const normalizedAppId = appId || "";
@@ -338,6 +339,64 @@ export function initIpcHandlers() {
         } catch (e) {
             console.error("Error updating window controls overlay:", e);
         }
+    });
+
+    electron.ipcMain.on("get-transparent-window-bounds", (event) => {
+        const ww = getWaveWindowByWebContentsId(event.sender.id);
+        if (ww) {
+            event.returnValue = ww.getBounds();
+        } else {
+            event.returnValue = null;
+        }
+    });
+
+    electron.ipcMain.on("resize-transparent-window", (event, bounds: Electron.Rectangle) => {
+        const ww = getWaveWindowByWebContentsId(event.sender.id);
+        if (ww) {
+            ww.setBounds(bounds);
+        }
+    });
+
+    electron.ipcMain.on("minimize-window", (event) => {
+        const ww = getWaveWindowByWebContentsId(event.sender.id);
+        if (ww) ww.minimize();
+    });
+
+    electron.ipcMain.on("maximize-window", (event) => {
+        const ww = getWaveWindowByWebContentsId(event.sender.id);
+        if (!ww) return;
+        const restoreBounds = customMaximizeRestoreBounds.get(event.sender.id);
+        if (restoreBounds) {
+            ww.setBounds(restoreBounds);
+            customMaximizeRestoreBounds.delete(event.sender.id);
+            return;
+        }
+        const bounds = ww.getBounds();
+        customMaximizeRestoreBounds.set(event.sender.id, bounds);
+        const display = electron.screen.getDisplayMatching(bounds);
+        ww.setBounds(display.workArea);
+    });
+
+    electron.ipcMain.on("unmaximize-window", (event) => {
+        const ww = getWaveWindowByWebContentsId(event.sender.id);
+        if (!ww) return;
+        const restoreBounds = customMaximizeRestoreBounds.get(event.sender.id);
+        if (restoreBounds) {
+            ww.setBounds(restoreBounds);
+            customMaximizeRestoreBounds.delete(event.sender.id);
+        } else {
+            ww.unmaximize();
+        }
+    });
+
+    electron.ipcMain.on("close-window", (event) => {
+        const ww = getWaveWindowByWebContentsId(event.sender.id);
+        if (ww) ww.close();
+    });
+
+    electron.ipcMain.on("is-maximized", (event) => {
+        const ww = getWaveWindowByWebContentsId(event.sender.id);
+        event.returnValue = customMaximizeRestoreBounds.has(event.sender.id) || (ww?.isMaximized?.() ?? false);
     });
 
     electron.ipcMain.on("quicklook", (event, filePath: string) => {
