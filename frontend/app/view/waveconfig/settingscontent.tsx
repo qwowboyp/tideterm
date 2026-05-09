@@ -20,11 +20,18 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
     const remoteTmuxResumeEnabled = settings?.["term:remotetmuxresume"] ?? true;
     const ctrlmSubmitEnabled = settings?.["term:ctrlmsubmit"] ?? false;
     const configuredFontSize = typeof settings?.["term:fontsize"] === "number" ? settings["term:fontsize"] : 12;
+    const configuredTransparency = typeof settings?.["term:transparency"] === "number" ? settings["term:transparency"] : 0;
     const [fontSize, setFontSize] = useState(String(configuredFontSize));
+    const [transparency, setTransparency] = useState(Math.round(configuredTransparency * 100));
+    const [isTransparencyUpdating, setIsTransparencyUpdating] = useState(false);
 
     useEffect(() => {
         setFontSize(String(configuredFontSize));
     }, [configuredFontSize]);
+
+    useEffect(() => {
+        setTransparency(Math.round(configuredTransparency * 100));
+    }, [configuredTransparency]);
 
     const refreshConfigAndReloadSelectedFile = async () => {
         const refreshed = await RpcApi.GetFullConfigCommand(TabRpcClient);
@@ -111,6 +118,37 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
         await setGlobalFontSize(12);
     };
 
+    const setGlobalTransparency = async (nextValue: number) => {
+        if (nextValue === configuredTransparency || isTransparencyUpdating) return;
+        setIsTransparencyUpdating(true);
+        globalStore.set(model.errorMessageAtom, null);
+
+        try {
+            await RpcApi.SetConfigCommand(TabRpcClient, {
+                "term:transparency": nextValue,
+                ...(nextValue > 0 ? { "window:transparent": true } : { "window:transparent": false }),
+            });
+            await refreshConfigAndReloadSelectedFile();
+        } catch (e: any) {
+            globalStore.set(model.errorMessageAtom, e?.message ? String(e.message) : String(e));
+        } finally {
+            setIsTransparencyUpdating(false);
+        }
+    };
+
+    const handleTransparencyChange = async (e: ChangeEvent<HTMLInputElement>) => {
+        const percent = Number(e.target.value);
+        setTransparency(percent);
+        const floatValue = percent / 100;
+        if (floatValue === configuredTransparency) return;
+        await setGlobalTransparency(floatValue);
+    };
+
+    const resetTransparencyToDefault = async () => {
+        setTransparency(0);
+        await setGlobalTransparency(0);
+    };
+
     return (
         <div className="flex flex-col gap-6 p-6 h-full overflow-auto">
             <div className="flex flex-col gap-1">
@@ -189,6 +227,38 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
             <div className="flex flex-col gap-1">
                 <div className="text-lg font-semibold">{t("settings.remoteTmuxResume")}</div>
                 <div className="text-sm text-muted-foreground">{t("settings.remoteTmuxResume.description")}</div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+                <div className="text-lg font-semibold">{t("settings.transparency")}</div>
+                <div className="text-sm text-muted-foreground">{t("settings.transparency.description")}</div>
+                {configuredTransparency > 0 ? (
+                    <div className="text-xs text-muted-foreground">{t("settings.transparency.restartHint")}</div>
+                ) : null}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+                <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={transparency}
+                    disabled={isTransparencyUpdating}
+                    onChange={handleTransparencyChange}
+                    className="w-48 accent-primary"
+                />
+                <span className="text-sm font-mono w-12 text-center">
+                    {transparency}{t("settings.transparency.percent")}
+                </span>
+                <button
+                    type="button"
+                    disabled={isTransparencyUpdating || configuredTransparency === 0}
+                    onClick={resetTransparencyToDefault}
+                    className="text-sm text-primary disabled:text-muted-foreground"
+                >
+                    Reset to default
+                </button>
             </div>
 
             <div className="flex flex-col gap-3">
