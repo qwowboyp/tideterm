@@ -13,15 +13,12 @@ import { useWaveObjectValue } from "./store/wos";
 export function AppBackground() {
     const bgRef = useRef<HTMLDivElement>(null);
     const tabId = useAtomValue(atoms.staticTabId);
-    const settings = useAtomValue(atoms.settingsAtom);
     const [tabData] = useWaveObjectValue<Tab>(WOS.makeORef("tab", tabId));
-    const isTransparent = settings?.["window:transparent"] === true;
     const style: CSSProperties = computeBgStyleFromMeta(tabData?.meta, 0.5) ?? {};
     const getAvgColor = useCallback(
         debounce(30, () => {
             if (
                 bgRef.current &&
-                !isTransparent &&
                 PLATFORM !== PlatformMacOS &&
                 bgRef.current &&
                 "windowControlsOverlay" in window.navigator
@@ -40,7 +37,7 @@ export function AppBackground() {
                 }
             }
         }),
-        [bgRef, isTransparent, style]
+        [bgRef, style]
     );
     useLayoutEffect(getAvgColor, [getAvgColor]);
     useResizeObserver(bgRef, getAvgColor);

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 .tab-bar-wrapper {
-    padding-top: 6px;
+    margin-top: 6px;
     position: relative;
     user-select: none;
     display: flex;
@@ -10,7 +10,7 @@
     align-items: end;
     width: 100vw;
     -webkit-app-region: drag;
-    height: max(33px, calc(33px * var(--zoomfactor-inv)));
+    height: max(27px, calc(27px * var(--zoomfactor-inv)));
 
     .win32.transparent-window & {
         width: calc(100vw - 138px);

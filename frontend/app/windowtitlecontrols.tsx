@@ -1,6 +1,6 @@
+import { atoms } from "@/store/global";
 import { useAtomValue } from "jotai";
-import { useEffect, useState, useCallback } from "react";
-import { atoms } from "./store/global";
+import { useEffect, useState } from "react";
 
 const MinimizeIcon = () => (
     <svg width="10" height="10" viewBox="0 0 10 10">
@@ -29,140 +29,81 @@ const CloseIcon = () => (
 );
 
 const BTN_W = 46;
-const BTN_H = 32;
-const noDragStyle = { WebkitAppRegion: "no-drag" };
 
-export const WindowTitleControls = () => {
-    const platform = globalThis.api?.getPlatform?.();
+const btnBase = {
+    position: "fixed" as const,
+    top: 0,
+    width: BTN_W,
+    height: 32,
+    display: "flex",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    cursor: "pointer",
+    border: "none",
+    padding: 0,
+    margin: 0,
+    color: "#c3c8c2",
+    background: "transparent",
+    zIndex: 100000,
+    fontFamily: "inherit",
+    outline: "none",
+    boxSizing: "border-box" as const,
+};
+
+export function WindowTitleControls() {
     const settings = useAtomValue(atoms.settingsAtom);
     const isTransparent = settings?.["window:transparent"] === true;
-
     const [isMaximized, setIsMaximized] = useState(false);
     const [hoverMin, setHoverMin] = useState(false);
     const [hoverMax, setHoverMax] = useState(false);
     const [hoverClose, setHoverClose] = useState(false);
 
-    const checkMaximized = useCallback(() => {
-        if (globalThis.api?.isMaximized) {
-            setIsMaximized(globalThis.api.isMaximized());
-        }
-    }, []);
-
     useEffect(() => {
-        if (platform !== "win32" || !isTransparent) return;
-        checkMaximized();
-        window.addEventListener("resize", checkMaximized);
-        return () => window.removeEventListener("resize", checkMaximized);
-    }, [platform, isTransparent, checkMaximized]);
+        if (globalThis.api?.getPlatform?.() !== "win32" || !isTransparent) return;
+        const check = () => {
+            if (globalThis.api?.isMaximized) {
+                globalThis.api.isMaximized().then(setIsMaximized);
+            }
+        };
+        check();
+        const id = setInterval(check, 500);
+        return () => clearInterval(id);
+    }, [isTransparent]);
 
-    if (platform !== "win32" || !isTransparent) return null;
+    if (globalThis.api?.getPlatform?.() !== "win32" || !isTransparent) return null;
 
-    const handleMinimize = () => {
-        globalThis.api?.minimizeWindow?.();
-    };
+    const handleMinimize = () => globalThis.api?.minimizeWindow?.();
     const handleMaximize = () => {
         globalThis.api?.maximizeWindow?.();
-        setIsMaximized(!isMaximized);
-        window.setTimeout(checkMaximized, 0);
+        setTimeout(() => {
+            if (globalThis.api?.isMaximized) {
+                globalThis.api.isMaximized().then(setIsMaximized);
+            }
+        }, 50);
     };
-    const handleClose = () => {
-        globalThis.api?.closeWindow?.();
-    };
+    const handleClose = () => globalThis.api?.closeWindow?.();
 
     return (
         <>
-            <button
-                type="button"
-                onClick={handleClose}
-                title="Close"
+            <button type="button" onClick={handleClose} title="Close"
                 onMouseEnter={() => setHoverClose(true)}
                 onMouseLeave={() => setHoverClose(false)}
-                style={{
-                    position: "fixed",
-                    top: 0,
-                    right: 0,
-                    width: BTN_W,
-                    height: BTN_H,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    border: "none",
-                    padding: 0,
-                    margin: 0,
-                    color: "#ffffff",
-                    background: hoverClose ? "#c42b1c" : "transparent",
-                    zIndex: 100000,
-                    fontFamily: "inherit",
-                    outline: "none",
-                    boxSizing: "border-box",
-                    ...noDragStyle,
-                }}
-            >
+                style={{ ...btnBase, right: 0, background: hoverClose ? "#c42b1c" : "transparent" }}>
                 <CloseIcon />
             </button>
-
-            <button
-                type="button"
-                onClick={handleMaximize}
+            <button type="button" onClick={handleMaximize}
                 title={isMaximized ? "Restore" : "Maximize"}
                 onMouseEnter={() => setHoverMax(true)}
                 onMouseLeave={() => setHoverMax(false)}
-                style={{
-                    position: "fixed",
-                    top: 0,
-                    right: BTN_W,
-                    width: BTN_W,
-                    height: BTN_H,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    border: "none",
-                    padding: 0,
-                    margin: 0,
-                    color: "#ffffff",
-                    background: hoverMax ? "rgba(255,255,255,0.1)" : "transparent",
-                    zIndex: 100000,
-                    fontFamily: "inherit",
-                    outline: "none",
-                    boxSizing: "border-box",
-                    ...noDragStyle,
-                }}
-            >
+                style={{ ...btnBase, right: BTN_W, background: hoverMax ? "rgba(255,255,255,0.1)" : "transparent" }}>
                 {isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
             </button>
-
-            <button
-                type="button"
-                onClick={handleMinimize}
-                title="Minimize"
+            <button type="button" onClick={handleMinimize} title="Minimize"
                 onMouseEnter={() => setHoverMin(true)}
                 onMouseLeave={() => setHoverMin(false)}
-                style={{
-                    position: "fixed",
-                    top: 0,
-                    right: BTN_W * 2,
-                    width: BTN_W,
-                    height: BTN_H,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    border: "none",
-                    padding: 0,
-                    margin: 0,
-                    color: "#ffffff",
-                    background: hoverMin ? "rgba(255,255,255,0.1)" : "transparent",
-                    zIndex: 100000,
-                    fontFamily: "inherit",
-                    outline: "none",
-                    boxSizing: "border-box",
-                    ...noDragStyle,
-                }}
-            >
+                style={{ ...btnBase, right: BTN_W * 2, background: hoverMin ? "rgba(255,255,255,0.1)" : "transparent" }}>
                 <MinimizeIcon />
             </button>
         </>
     );
-};
+}
