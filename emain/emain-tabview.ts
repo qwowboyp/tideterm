@@ -56,7 +56,7 @@ function handleWindowsMenuAccelerators(waveEvent: WaveKeyboardEvent, tabView: Wa
 
     if (checkKeyPressed(waveEvent, "F11")) {
         if (waveWindow) {
-            waveWindow.setFullScreen(!waveWindow.isFullScreen());
+            waveWindow.toggleWaveFullScreen();
         }
         return true;
     }

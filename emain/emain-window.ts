@@ -144,6 +144,12 @@ export class WaveBrowserWindow extends BaseWindow {
     private canClose: boolean;
     private deleteAllowed: boolean;
     private actionQueue: WindowActionQueueEntry[];
+    private fullScreenF11FallbackRegistered: boolean;
+    private isWaveFullScreen: boolean = false;
+
+    toggleWaveFullScreen(): void {
+        this.setFullScreen(!this.isWaveFullScreen);
+    }
 
     constructor(waveWindow: WaveWindow, fullConfig: FullConfigType, opts: WindowOpts) {
         const settings = fullConfig?.settings;
@@ -188,21 +194,28 @@ export class WaveBrowserWindow extends BaseWindow {
                 winOpts.backgroundColor = "#222222";
             }
         } else if (opts.unamePlatform === "win32") {
+            winOpts.titleBarStyle = "hidden";
             if (isTransparent) {
-                winOpts.frame = false;
+                winOpts.titleBarOverlay = false;
+                winOpts.resizable = true;
+                winOpts.minimizable = true;
+                winOpts.maximizable = true;
+                winOpts.thickFrame = true;
                 winOpts.transparent = true;
-            } else {
-                winOpts.titleBarStyle = "hidden";
+            } else if (isBlur) {
                 winOpts.titleBarOverlay = {
                     color: "#222222",
                     symbolColor: "#c3c8c2",
                     height: 32,
                 };
-                if (isBlur) {
-                    winOpts.backgroundMaterial = "acrylic";
-                } else {
-                    winOpts.backgroundColor = "#222222";
-                }
+                winOpts.backgroundMaterial = "acrylic";
+            } else {
+                winOpts.titleBarOverlay = {
+                    color: "#222222",
+                    symbolColor: "#c3c8c2",
+                    height: 32,
+                };
+                winOpts.backgroundColor = "#222222";
             }
         }
 
@@ -219,6 +232,7 @@ export class WaveBrowserWindow extends BaseWindow {
             });
         }
         this.actionQueue = [];
+        this.fullScreenF11FallbackRegistered = false;
         this.waveWindowId = waveWindow.oid;
         this.workspaceId = waveWindow.workspaceid;
         this.allLoadedTabViews = new Map<string, WaveTabView>();
@@ -252,10 +266,18 @@ export class WaveBrowserWindow extends BaseWindow {
             if (this.isDestroyed()) {
                 return;
             }
+            this.isWaveFullScreen = true;
             console.log("enter-full-screen event", this.getContentBounds());
             const tabView = this.activeTabView;
             if (tabView) {
                 tabView.webContents.send("fullscreen-change", true);
+            }
+            if (!this.fullScreenF11FallbackRegistered) {
+                this.fullScreenF11FallbackRegistered = globalShortcut.register("F11", () => {
+                    if (!this.isDestroyed()) {
+                        this.toggleWaveFullScreen();
+                    }
+                });
             }
             this.activeTabView?.positionTabOnScreen(this.getContentBounds());
         });
@@ -263,9 +285,14 @@ export class WaveBrowserWindow extends BaseWindow {
             if (this.isDestroyed()) {
                 return;
             }
+            this.isWaveFullScreen = false;
             const tabView = this.activeTabView;
             if (tabView) {
                 tabView.webContents.send("fullscreen-change", false);
+            }
+            if (this.fullScreenF11FallbackRegistered) {
+                globalShortcut.unregister("F11");
+                this.fullScreenF11FallbackRegistered = false;
             }
             this.activeTabView?.positionTabOnScreen(this.getContentBounds());
         });
@@ -333,6 +360,10 @@ export class WaveBrowserWindow extends BaseWindow {
             waveWindowMap.delete(this.waveWindowId);
             if (focusedWaveWindow == this) {
                 focusedWaveWindow = null;
+            }
+            if (this.fullScreenF11FallbackRegistered) {
+                globalShortcut.unregister("F11");
+                this.fullScreenF11FallbackRegistered = false;
             }
             this.removeAllChildViews();
             if (getGlobalIsRelaunching()) {
