@@ -40,6 +40,11 @@ contextBridge.exposeInMainWorld("api", {
     getUpdaterStatus: () => ipcRenderer.sendSync("get-app-update-status"),
     getUpdaterChannel: () => ipcRenderer.sendSync("get-updater-channel"),
     installAppUpdate: () => ipcRenderer.send("install-app-update"),
+    minimizeWindow: () => ipcRenderer.send("minimize-window"),
+    maximizeWindow: () => ipcRenderer.send("maximize-window"),
+    unmaximizeWindow: () => ipcRenderer.send("unmaximize-window"),
+    closeWindow: () => ipcRenderer.send("close-window"),
+    isMaximized: () => ipcRenderer.invoke("is-maximized"),
     onMenuItemAbout: (callback) => ipcRenderer.on("menu-item-about", callback),
     onWindowTitleRename: (callback) => {
         const handler = (_event: Electron.IpcRendererEvent) => callback();
@@ -80,11 +85,6 @@ contextBridge.exposeInMainWorld("api", {
     setBuilderWindowAppId: (appId: string) => ipcRenderer.send("set-builder-window-appid", appId),
     getTransparentWindowBounds: () => ipcRenderer.sendSync("get-transparent-window-bounds"),
     resizeTransparentWindow: (bounds: Electron.Rectangle) => ipcRenderer.send("resize-transparent-window", bounds),
-    minimizeWindow: () => ipcRenderer.send("minimize-window"),
-    maximizeWindow: () => ipcRenderer.send("maximize-window"),
-    unmaximizeWindow: () => ipcRenderer.send("unmaximize-window"),
-    closeWindow: () => ipcRenderer.send("close-window"),
-    isMaximized: () => ipcRenderer.sendSync("is-maximized"),
     doRefresh: () => ipcRenderer.send("do-refresh"),
 });
 

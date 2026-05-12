@@ -107,6 +107,11 @@ declare global {
         getUpdaterStatus: () => UpdaterStatus; // get-app-update-status
         getUpdaterChannel: () => string; // get-updater-channel
         installAppUpdate: () => void; // install-app-update
+        minimizeWindow: () => void; // minimize-window
+        maximizeWindow: () => void; // maximize-window
+        unmaximizeWindow: () => void; // unmaximize-window
+        closeWindow: () => void; // close-window
+        isMaximized: () => Promise<boolean>; // is-maximized
         onMenuItemAbout: (callback: () => void) => void; // menu-item-about
         onWindowTitleRename: (callback: () => void) => () => void; // window-title-rename
         onWindowTitleRestoreAuto: (callback: () => void) => () => void; // window-title-restore-auto
@@ -138,11 +143,6 @@ declare global {
         setBuilderWindowAppId: (appId: string) => void; // set-builder-window-appid
         getTransparentWindowBounds: () => Electron.Rectangle | null; // get-transparent-window-bounds
         resizeTransparentWindow: (bounds: Electron.Rectangle) => void; // resize-transparent-window
-        minimizeWindow: () => void; // minimize-window
-        maximizeWindow: () => void; // maximize-window
-        unmaximizeWindow: () => void; // unmaximize-window
-        closeWindow: () => void; // close-window
-        isMaximized: () => boolean; // is-maximized
         doRefresh: () => void; // do-refresh
     };
 
