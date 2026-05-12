@@ -357,48 +357,6 @@ export function initIpcHandlers() {
         }
     });
 
-    electron.ipcMain.on("minimize-window", (event) => {
-        const ww = getWaveWindowByWebContentsId(event.sender.id);
-        if (ww) ww.minimize();
-    });
-
-    electron.ipcMain.on("maximize-window", (event) => {
-        const ww = getWaveWindowByWebContentsId(event.sender.id);
-        if (!ww) return;
-        const restoreBounds = customMaximizeRestoreBounds.get(event.sender.id);
-        if (restoreBounds) {
-            ww.setBounds(restoreBounds);
-            customMaximizeRestoreBounds.delete(event.sender.id);
-            return;
-        }
-        const bounds = ww.getBounds();
-        customMaximizeRestoreBounds.set(event.sender.id, bounds);
-        const display = electron.screen.getDisplayMatching(bounds);
-        ww.setBounds(display.workArea);
-    });
-
-    electron.ipcMain.on("unmaximize-window", (event) => {
-        const ww = getWaveWindowByWebContentsId(event.sender.id);
-        if (!ww) return;
-        const restoreBounds = customMaximizeRestoreBounds.get(event.sender.id);
-        if (restoreBounds) {
-            ww.setBounds(restoreBounds);
-            customMaximizeRestoreBounds.delete(event.sender.id);
-        } else {
-            ww.unmaximize();
-        }
-    });
-
-    electron.ipcMain.on("close-window", (event) => {
-        const ww = getWaveWindowByWebContentsId(event.sender.id);
-        if (ww) ww.close();
-    });
-
-    electron.ipcMain.on("is-maximized", (event) => {
-        const ww = getWaveWindowByWebContentsId(event.sender.id);
-        event.returnValue = customMaximizeRestoreBounds.has(event.sender.id) || (ww?.isMaximized?.() ?? false);
-    });
-
     electron.ipcMain.on("quicklook", (event, filePath: string) => {
         if (unamePlatform !== "darwin") return;
         child_process.execFile("/usr/bin/qlmanage", ["-p", filePath], (error, stdout, stderr) => {
@@ -511,5 +469,47 @@ export function initIpcHandlers() {
 
     electron.ipcMain.on("do-refresh", (event) => {
         event.sender.reloadIgnoringCache();
+    });
+
+    electron.ipcMain.on("minimize-window", (event) => {
+        const ww = getWaveWindowByWebContentsId(event.sender.id);
+        if (ww) ww.minimize();
+    });
+
+    electron.ipcMain.on("maximize-window", (event) => {
+        const ww = getWaveWindowByWebContentsId(event.sender.id);
+        if (!ww) return;
+        const restoreBounds = customMaximizeRestoreBounds.get(event.sender.id);
+        if (restoreBounds) {
+            ww.setBounds(restoreBounds);
+            customMaximizeRestoreBounds.delete(event.sender.id);
+            return;
+        }
+        const bounds = ww.getBounds();
+        customMaximizeRestoreBounds.set(event.sender.id, bounds);
+        const display = electron.screen.getDisplayMatching(bounds);
+        ww.setBounds(display.workArea);
+    });
+
+    electron.ipcMain.on("unmaximize-window", (event) => {
+        const ww = getWaveWindowByWebContentsId(event.sender.id);
+        if (!ww) return;
+        const restoreBounds = customMaximizeRestoreBounds.get(event.sender.id);
+        if (restoreBounds) {
+            ww.setBounds(restoreBounds);
+            customMaximizeRestoreBounds.delete(event.sender.id);
+        } else {
+            ww.unmaximize();
+        }
+    });
+
+    electron.ipcMain.on("close-window", (event) => {
+        const ww = getWaveWindowByWebContentsId(event.sender.id);
+        if (ww) ww.close();
+    });
+
+    electron.ipcMain.handle("is-maximized", (event) => {
+        const ww = getWaveWindowByWebContentsId(event.sender.id);
+        return customMaximizeRestoreBounds.has(event.sender.id) || (ww ? ww.isMaximized() : false);
     });
 }
