@@ -303,7 +303,7 @@ export class TermViewModel implements ViewModel {
         });
         this.termTransparencyAtom = useBlockAtom(blockId, "termtransparencyatom", () => {
             return jotai.atom<number>((get) => {
-                let value = get(getOverrideConfigAtom(this.blockId, "term:transparency")) ?? 0.5;
+                let value = get(getOverrideConfigAtom(this.blockId, "term:transparency")) ?? 0;
                 return boundNumber(value, 0, 1);
             });
         });

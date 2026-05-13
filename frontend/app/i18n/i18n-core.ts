@@ -56,6 +56,12 @@ const en = {
     "settings.ctrlmSubmit.description":
         "When enabled, CTRL+M will act as Enter and send the AI chat message. Disable this if you use an IME (e.g., Zhuyin/Bopomofo) and frequently mistype CTRL+M when typing commas.",
     "settings.ctrlmSubmit.toggle": "Allow CTRL+M to send messages",
+    "settings.transparency": "Terminal Transparency",
+    "settings.transparency.description":
+        "Set the default transparency level for terminal blocks. 0% is fully opaque, 100% is fully transparent.",
+    "settings.transparency.restartHint":
+        "Desktop transparency requires reopening the window after enabling terminal transparency.",
+    "settings.transparency.percent": "%",
 
     // Workspace / widgets
     "workspace.localWaveApps": "Local Apps",
@@ -509,6 +515,11 @@ const zhCN: Record<I18nKey, string> = {
     "settings.ctrlmSubmit.description":
         "启用后，CTRL+M 会作为 Enter 发送 AI 聊天消息。如果您使用注音等输入法，经常在输入逗号时误触 CTRL+M，可以关闭此选项。",
     "settings.ctrlmSubmit.toggle": "允许 CTRL+M 发送消息",
+    "settings.transparency": "终端透明度",
+    "settings.transparency.description":
+        "设置终端区块的默认透明度。0% 为完全不透明，100% 为完全透明。",
+    "settings.transparency.restartHint": "桌面透明需要在启用终端透明度后重新打开窗口。",
+    "settings.transparency.percent": "%",
 
     // Workspace / widgets
     "workspace.localWaveApps": "本地应用",
@@ -958,6 +969,11 @@ const zhTW: Record<I18nKey, string> = {
     "settings.ctrlmSubmit.description":
         "啟用後，CTRL+M 會作為 Enter 送出 AI 聊天訊息。如果您使用注音等輸入法，經常在輸入逗號時誤觸 CTRL+M，可以關閉此選項。",
     "settings.ctrlmSubmit.toggle": "允許 CTRL+M 送出訊息",
+    "settings.transparency": "終端機透明度",
+    "settings.transparency.description":
+        "設定終端機區塊的預設透明度。0% 為完全不透明，100% 為完全透明。",
+    "settings.transparency.restartHint": "桌面透明需要在啟用終端機透明度後重新開啟視窗。",
+    "settings.transparency.percent": "%",
 
     // Workspace / widgets
     "workspace.localWaveApps": "本機應用程式",

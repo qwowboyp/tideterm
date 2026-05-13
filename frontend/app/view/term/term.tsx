@@ -622,7 +622,7 @@ const SingleTerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel
                 drawBoldTextInBrightColors: false,
                 fontWeight: "normal",
                 fontWeightBold: "bold",
-                allowTransparency: false,
+                allowTransparency: true,
                 scrollback: termScrollback,
                 allowProposedApi: true, // Required by @xterm/addon-search to enable search functionality and decorations
                 ignoreBracketedPasteMode: !termAllowBPM,
@@ -739,6 +739,9 @@ const SingleTerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel
 const TerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel>) => {
     const t = useT();
     const [blockData] = WOS.useWaveObjectValue<Block>(WOS.makeORef("block", blockId));
+    const termTransparency = useAtomValueSafe(model?.termTransparencyAtom) ?? 0;
+    const isTermTransparent = termTransparency > 0;
+    const termSidebarOpacity = String(1 - termTransparency);
     const isSession = !!blockData?.meta?.[TermMultiSessionKey_IsSession];
     if (isSession) {
         return <SingleTerminalView blockId={blockId} model={model} />;
@@ -936,8 +939,13 @@ const TerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel>) => 
             {/* opqlo [session側邊欄收折]-sidebar常駐DOM用transform滑動 */}
             {listOpen ? (
                 <div
-                    className={clsx("term-multi-sidebar", "term-sidebar-slide", { "term-sidebar-hidden": isCollapsed })}
-                    style={{ width: `${sidebarWidth}px` }}
+                    className={clsx("term-multi-sidebar", "term-sidebar-slide", { "term-sidebar-hidden": isCollapsed, "term-sidebar-transparent": isTermTransparent })}
+                    style={
+                        {
+                            width: `${sidebarWidth}px`,
+                            ...(isTermTransparent ? { "--term-sidebar-opacity": termSidebarOpacity } : {}),
+                        } as React.CSSProperties
+                    }
                 >
                     <div className="term-multi-sidebar-header">
                         {t("term.sessions.listTitle")}
@@ -1002,7 +1010,13 @@ const TerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel>) => 
                 <div
                     className={clsx("term-collapsed-sidebar", "term-sidebar-slide", {
                         "term-sidebar-hidden": !isCollapsed,
+                        "term-sidebar-transparent": isTermTransparent,
                     })}
+                    style={
+                        isTermTransparent
+                            ? ({ "--term-sidebar-opacity": termSidebarOpacity } as React.CSSProperties)
+                            : undefined
+                    }
                 >
                     <div
                         className="term-collapsed-expand-btn"
