@@ -1062,6 +1062,8 @@ declare global {
         "term:activesessionid"?: string;
         "term:sessionlistopen"?: boolean;
         "term:sessionlistwidth"?: number;
+        "term:sessionlistcollapsed"?: boolean;
+        "term:hideparentsession"?: boolean;
         "web:zoom"?: number;
         "web:hidenav"?: boolean;
         "web:partition"?: string;

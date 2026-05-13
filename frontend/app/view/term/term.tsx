@@ -443,7 +443,7 @@ const TermToolbarVDomNode = ({ blockId, model }: TerminalViewProps) => {
     );
 };
 
-const SingleTerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel>) => {
+const SingleTerminalView = ({ blockId, model }: { blockId: string; model: TermViewModel }) => {
     const viewRef = React.useRef<HTMLDivElement>(null);
     const connectElemRef = React.useRef<HTMLDivElement>(null);
     const [blockData] = WOS.useWaveObjectValue<Block>(WOS.makeORef("block", blockId));
@@ -459,6 +459,7 @@ const SingleTerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel
     const termFontSize = jotai.useAtomValue(model.fontSizeAtom);
     const fullConfig = globalStore.get(atoms.fullConfigAtom);
     const connFontFamily = fullConfig.connections?.[blockData?.meta?.connection]?.["term:fontfamily"];
+    const blockFontFamily = blockData?.meta?.["term:fontfamily"];
     const isFocused = jotai.useAtomValue(model.nodeModel.isFocused);
     const isMI = jotai.useAtomValue(tabModel.isTermMultiInput);
     const isBasicTerm = termMode != "vdom" && blockData?.meta?.controller != "cmd"; // needs to match isBasicTerm
@@ -618,7 +619,7 @@ const SingleTerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel
             {
                 theme: termTheme,
                 fontSize: termFontSize,
-                fontFamily: termSettings?.["term:fontfamily"] ?? connFontFamily ?? "Hack",
+                fontFamily: blockFontFamily ?? termSettings?.["term:fontfamily"] ?? connFontFamily ?? "Hack",
                 drawBoldTextInBrightColors: false,
                 fontWeight: "normal",
                 fontWeightBold: "bold",
@@ -671,7 +672,7 @@ const SingleTerminalView = ({ blockId, model }: ViewComponentProps<TermViewModel
             termWrap.dispose();
             rszObs.disconnect();
         };
-    }, [blockId, termSettings, termFontSize, connFontFamily]);
+    }, [blockId, termSettings, termFontSize, connFontFamily, blockFontFamily]);
 
     React.useEffect(() => {
         if (termModeRef.current == "vdom" && termMode == "term") {

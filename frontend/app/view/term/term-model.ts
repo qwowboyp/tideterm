@@ -101,10 +101,10 @@ export class TermViewModel implements ViewModel {
     shellProcFullStatus: jotai.PrimitiveAtom<BlockControllerRuntimeStatus>;
     shellProcStatus: jotai.Atom<string>;
     shellIntegrationStatus: jotai.PrimitiveAtom<"ready" | "running-command" | null>;
-    busyAtom: jotai.Atom<boolean>;
+    busyAtom: jotai.PrimitiveAtom<boolean>;
     activeShellIntegrationStatus: jotai.Atom<"ready" | "running-command" | null>;
     activeBusyAtom: jotai.Atom<boolean>;
-    lastOutputTimeAtom: jotai.Atom<number>;
+    lastOutputTimeAtom: jotai.PrimitiveAtom<number>;
     activeLastOutputTimeAtom: jotai.Atom<number>;
     shellProcStatusUnsubFn: () => void;
     termBPMUnsubFn: () => void;
@@ -134,9 +134,9 @@ export class TermViewModel implements ViewModel {
             return blockData?.meta?.["term:mode"] ?? "term";
         });
         this.isRestarting = jotai.atom(false);
-        this.shellIntegrationStatus = jotai.atom<"ready" | "running-command" | null>(null);
-        this.busyAtom = jotai.atom(false);
-        this.lastOutputTimeAtom = jotai.atom(Date.now());
+        this.shellIntegrationStatus = jotai.atom<"ready" | "running-command" | null>(null) as jotai.PrimitiveAtom<"ready" | "running-command" | null>;
+        this.busyAtom = jotai.atom(false) as jotai.PrimitiveAtom<boolean>;
+        this.lastOutputTimeAtom = jotai.atom(Date.now()) as jotai.PrimitiveAtom<number>;
         this.activeShellIntegrationStatus = jotai.atom((get) => {
             const blockData = get(this.blockAtom);
             const activeSessionId = this.getActiveTermSessionId(blockData);
@@ -823,6 +823,8 @@ export class TermViewModel implements ViewModel {
         const transparencyMeta = globalStore.get(getBlockMetaKeyAtom(this.blockId, "term:transparency"));
         const blockData = globalStore.get(this.blockAtom);
         const overrideFontSize = blockData?.meta?.["term:fontsize"];
+        const defaultFontFamily = globalStore.get(getSettingsKeyAtom("term:fontfamily")) ?? "Hack";
+        const overrideFontFamily = blockData?.meta?.["term:fontfamily"];
 
         termThemeKeys.sort((a, b) => {
             return (termThemes[a]["display:order"] ?? 0) - (termThemes[b]["display:order"] ?? 0);
@@ -910,6 +912,73 @@ export class TermViewModel implements ViewModel {
         fullMenu.push({
             label: tt("termmenu.fontSize"),
             submenu: fontSizeSubMenu,
+        });
+        const defaultFontSuffix = lang === "en" ? ` (${tt("common.default")})` : `（${tt("common.default")}）`;
+        const fontFamilyDisplayNames: Record<string, string> = {
+            Hack: "Hack",
+            "Fira Code": "Fira Code",
+            "JetBrains Mono": "JetBrains Mono",
+            "Source Code Pro": "Source Code Pro",
+            "Cascadia Code": "Cascadia Code",
+            "DejaVu Sans Mono": "DejaVu Sans Mono",
+            Consolas: "Consolas",
+            Monaco: "Monaco",
+            Menlo: "Menlo",
+            "Ubuntu Mono": "Ubuntu Mono",
+            Iosevka: "Iosevka",
+            "Noto Sans Mono": "Noto Sans Mono",
+            Inconsolata: "Inconsolata",
+            "Liberation Mono": "Liberation Mono",
+            PMingLiU: "新細明體",
+            "Microsoft JhengHei": "微軟正黑體",
+            "MingLiU-ExtB": "細明體-ExtB",
+        };
+        const fontFamilyValues = [
+            "Hack",
+            "Fira Code",
+            "JetBrains Mono",
+            "Source Code Pro",
+            "Cascadia Code",
+            "DejaVu Sans Mono",
+            "Consolas",
+            "Monaco",
+            "Menlo",
+            "Ubuntu Mono",
+            "Iosevka",
+            "Noto Sans Mono",
+            "Inconsolata",
+            "Liberation Mono",
+            "PMingLiU",
+            "Microsoft JhengHei",
+            "MingLiU-ExtB",
+        ];
+        const fontFamilySubMenu: ContextMenuItem[] = [
+            {
+                label: tt("common.defaultWithValue", { value: defaultFontFamily }),
+                type: "checkbox",
+                checked: overrideFontFamily == null,
+                click: () => {
+                    RpcApi.SetMetaCommand(TabRpcClient, {
+                        oref: WOS.makeORef("block", this.blockId),
+                        meta: { "term:fontfamily": null },
+                    });
+                },
+            },
+            ...fontFamilyValues.map((font) => ({
+                label: `${fontFamilyDisplayNames[font] ?? font}${font === defaultFontFamily ? defaultFontSuffix : ""}`,
+                type: "checkbox" as const,
+                checked: overrideFontFamily === font,
+                click: () => {
+                    RpcApi.SetMetaCommand(TabRpcClient, {
+                        oref: WOS.makeORef("block", this.blockId),
+                        meta: { "term:fontfamily": font },
+                    });
+                },
+            })),
+        ];
+        fullMenu.push({
+            label: tt("termmenu.fontFamily"),
+            submenu: fontFamilySubMenu,
         });
         fullMenu.push({
             label: tt("termmenu.transparency"),

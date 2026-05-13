@@ -62,6 +62,9 @@ const en = {
     "settings.transparency.restartHint":
         "Desktop transparency requires reopening the window after enabling terminal transparency.",
     "settings.transparency.percent": "%",
+    "settings.fontFamily": "Font Family",
+    "settings.fontFamily.description":
+        "Font family for new terminal blocks. Existing terminals are not affected.",
 
     // Workspace / widgets
     "workspace.localWaveApps": "Local Apps",
@@ -111,6 +114,7 @@ const en = {
     // Terminal settings menu
     "termmenu.themes": "Themes",
     "termmenu.fontSize": "Font Size",
+    "termmenu.fontFamily": "Font Family",
     "termmenu.transparency": "Transparency",
     "termmenu.transparentBackground": "Transparent Background",
     "termmenu.noTransparency": "No Transparency",
@@ -520,6 +524,8 @@ const zhCN: Record<I18nKey, string> = {
         "设置终端区块的默认透明度。0% 为完全不透明，100% 为完全透明。",
     "settings.transparency.restartHint": "桌面透明需要在启用终端透明度后重新打开窗口。",
     "settings.transparency.percent": "%",
+    "settings.fontFamily": "字体",
+    "settings.fontFamily.description": "新终端区块的字体。现有终端不受影响。",
 
     // Workspace / widgets
     "workspace.localWaveApps": "本地应用",
@@ -569,6 +575,7 @@ const zhCN: Record<I18nKey, string> = {
     // Terminal settings menu
     "termmenu.themes": "主题",
     "termmenu.fontSize": "字体大小",
+    "termmenu.fontFamily": "字体",
     "termmenu.transparency": "透明度",
     "termmenu.transparentBackground": "透明背景",
     "termmenu.noTransparency": "无透明",
@@ -974,6 +981,8 @@ const zhTW: Record<I18nKey, string> = {
         "設定終端機區塊的預設透明度。0% 為完全不透明，100% 為完全透明。",
     "settings.transparency.restartHint": "桌面透明需要在啟用終端機透明度後重新開啟視窗。",
     "settings.transparency.percent": "%",
+    "settings.fontFamily": "字型",
+    "settings.fontFamily.description": "新終端機區塊的字型。現有終端機不受影響。",
 
     // Workspace / widgets
     "workspace.localWaveApps": "本機應用程式",
@@ -1023,6 +1032,7 @@ const zhTW: Record<I18nKey, string> = {
     // Terminal settings menu
     "termmenu.themes": "主題",
     "termmenu.fontSize": "字型大小",
+    "termmenu.fontFamily": "字型",
     "termmenu.transparency": "透明度",
     "termmenu.transparentBackground": "透明背景",
     "termmenu.noTransparency": "無透明",
