@@ -1,0 +1,94 @@
+{
+  "lastCheckDate": "2026-05-10",
+  "checkIntervalDays": 30,
+  "trackedRepos": [
+    {
+      "repo": "PowerShell/PowerShell",
+      "type": "upstream-root-cause",
+      "issues": [
+        { "number": 11215, "status": "OPEN", "hasFix": false, "note": "PRIMARY pwsh tracker — FailFast on get_CursorPosition after TUI exit. Updated 2026-05-03. MSFT engineer commented 'might have been addressed in dotnet9' but user confirmed not fixed Nov 2025" },
+        { "number": 26939, "status": "OPEN", "hasFix": false, "note": "Crash when exiting Flatpak debugging shell — same FailFast pattern. Opened 2026-03-05" },
+        { "number": 25945, "status": "OPEN", "hasFix": false, "note": "Crash when arecord --interactive is killed — same FailFast pattern. Opened 2025-09-11" },
+        { "number": 16484, "status": "CLOSED", "closedDate": null, "hasFix": false, "note": "Closed as no-activity. Exit code 2148734499. Still reproduced Oct 2024" },
+        { "number": 16818, "status": "CLOSED", "closedDate": "2023-08-07", "hasFix": false, "note": "LEGACY — Closed as Needs-Repro without fix (~3 years old)" },
+        { "number": 15254, "status": "CLOSED", "closedDate": null, "hasFix": true, "note": "Fixed in pwsh v7.2.0-preview.6 (race condition variant)" }
+      ],
+      "searchTerms": ["GetConsoleScreenBufferInfo", "0x80131623", "FailFast console", "ConPTY", "ERROR_PIPE_NOT_CONNECTED"]
+    },
+    {
+      "repo": "dotnet/runtime",
+      "type": "upstream-root-cause",
+      "issues": [
+        { "number": 121387, "status": "OPEN", "hasFix": false, "note": "Console.GetCursorPosition() wrong after writing to rightmost column — related but different bug" }
+      ],
+      "sourceFiles": [
+        { "path": "src/libraries/System.Console/src/System/ConsolePal.Windows.cs", "lines": "1101-1134", "note": "GetBufferInfo(throwOnNoConsole:true) throws IOException on ERROR_PIPE_NOT_CONNECTED. Last checked 2026-05-08 main branch — NO fix" }
+      ],
+      "searchTerms": ["ConsolePal", "GetConsoleScreenBufferInfo", "GetBufferInfo", "FailFast"]
+    },
+    {
+      "repo": "microsoft/terminal",
+      "type": "conpty-platform",
+      "issues": [
+        { "number": 14511, "status": "OPEN", "closedDate": null, "hasFix": false, "note": "LEGACY PRIMARY — reopened multiple times, ~3 years old, no ConPTY/pwsh fix" },
+        { "number": 17716, "status": "OPEN", "closedDate": null, "hasFix": false, "note": "Discussion: ConPTY pipe close ordering" },
+        { "number": 17903, "status": "CLOSED", "closedDate": "2024-10-02", "hasFix": true, "note": "Fixed handle leak in ClosePseudoConsole" },
+        { "number": 17688, "status": "CLOSED", "closedDate": "2024-08-14", "hasFix": true, "note": "Fixed ClosePseudoConsole hang with PSEUDOCONSOLE_INHERIT_CURSOR" },
+        { "number": 17489, "status": "CLOSED", "closedDate": "2024-07-17", "hasFix": true, "note": "Fixed conpty hang in _ClosePseudoConsoleMembers" },
+        { "number": 16212, "status": "CLOSED", "closedDate": null, "hasFix": false, "note": "Duplicated to #14511" },
+        { "number": 1810, "status": "CLOSED", "closedDate": null, "hasFix": true, "note": "ConPTY shutdown deadlock fixed" },
+        { "number": 14160, "status": "CLOSED", "closedDate": null, "hasFix": true, "note": "ConPTY shutdown deadlock fix PR" },
+        { "number": 14282, "status": "CLOSED", "closedDate": null, "hasFix": true, "note": "Wait for clients exit on shutdown" },
+        { "number": 17510, "status": "CLOSED", "closedDate": null, "hasFix": true, "note": "Cursor inheritance timeout" }
+      ],
+      "searchTerms": ["ClosePseudoConsole", "ConPTY pipe drain", "ConPTY shutdown", "0xE9", "FailFast pwsh"]
+    },
+    {
+      "repo": "sanshao85/tideterm",
+      "type": "this-project",
+      "issues": [],
+      "prs": [],
+      "searchTerms": ["pwsh crash", "conpty", "0x80131623", "shell crash", "terminal crash windows"],
+      "lastSearchResult": "No relevant issues/PRs/commits found (17 issues, 15 PRs total, none related)"
+    },
+    {
+      "repo": "wavetermdev/waveterm",
+      "type": "upstream-fork",
+      "issues": [],
+      "prs": [
+        { "number": 2822, "status": "MERGED", "note": "More Durable Shell Bug Fixes — lifecycle, not ConPTY" }
+      ],
+      "searchTerms": ["pwsh crash", "conpty", "0x80131623", "windows pty"],
+      "lastSearchResult": "No ConPTY-specific code. Windows jobmanager is stub. No crash fix."
+    },
+    {
+      "repo": "microsoft/node-pty",
+      "type": "reference-implementation",
+      "prs": [
+        { "number": 415, "status": "MERGED", "note": "Host conout socket in worker thread — drain pattern" },
+        { "number": 901, "status": "OPEN", "note": "Swallows resize() errors after PTY exit — fixes race condition in Node.js v22+. Opened Mar 2026" },
+        { "number": 755, "status": "MERGED", "note": "Fixes conhost.exe process leaks on PTY kill via JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE. Merged Jan 2025" },
+        { "number": 672, "status": "MERGED", "note": "Fixes assertion failure in conpty.cc on node environment shutdown. Merged Mar 2024" },
+        { "number": 886, "status": "MERGED", "note": "try/catch around getConsoleProcessList when AttachConsole fails. Merged Feb 2026" }
+      ],
+      "searchTerms": ["ConPTY drain", "ClosePseudoConsole", "conout worker"]
+    }
+  ],
+  "keyFindings": {
+    "rootCauseUnfixed": true,
+    "rootCauseConfirmedDate": "2026-05-08",
+    "rootCauseEvidence": [
+      "dotnet/runtime ConsolePal.Windows.cs lines 1101-1134 still has GetBufferInfo(throwOnNoConsole:true) that throws IOException on ERROR_PIPE_NOT_CONNECTED",
+      "pwsh #11215 updated 2026-05-03 — user confirmed not fixed in .NET 9",
+      "pwsh #26939 opened 2026-03-05 — still reproduces",
+      "pwsh #25945 opened 2025-09-11 — still reproduces",
+      "No PR in dotnet/runtime or PowerShell/PowerShell modifies the crash path"
+    ],
+    "terminalSideWorkaroundPossible": true,
+    "workaroundPattern": "Drain output pipe in separate goroutine before ClosePseudoConsole",
+    "win11_24h2_behavior": "ClosePseudoConsole returns immediately (no deadlock, but pwsh still crashes)",
+    "pwshAffectedVersions": "7.2+ through 7.6.1 (.NET 10)",
+    "pwshUnaffectedVersions": "Windows PowerShell 5.1",
+    "otherTerminals": "Alacritty, WezTerm, Windows Terminal — no ConPTY-specific crash workarounds implemented"
+  }
+}

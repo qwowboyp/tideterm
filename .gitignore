@@ -35,3 +35,6 @@ storybook-static/
 test-results.xml
 
 docsite/
+
+# Test coverage
+coverage/
