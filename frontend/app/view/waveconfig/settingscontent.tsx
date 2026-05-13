@@ -128,7 +128,8 @@ export function SettingsContent({ model }: { model: WaveConfigViewModel }) {
                 "term:transparency": nextValue,
                 ...(nextValue > 0 ? { "window:transparent": true } : { "window:transparent": false }),
             });
-            await refreshConfigAndReloadSelectedFile();
+            const refreshed = await RpcApi.GetFullConfigCommand(TabRpcClient);
+            globalStore.set(atoms.fullConfigAtom, refreshed);
         } catch (e: any) {
             globalStore.set(model.errorMessageAtom, e?.message ? String(e.message) : String(e));
         } finally {

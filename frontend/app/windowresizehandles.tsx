@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useEffect } from "react";
+import React, { useCallback, useRef, useEffect, useMemo } from "react";
 import { useAtomValue } from "jotai";
 import { atoms } from "./store/global";
 
@@ -6,6 +6,10 @@ const WindowResizeHandles = () => {
     const isWin32 = globalThis.api?.getPlatform?.() === "win32";
     const settings = useAtomValue(atoms.settingsAtom);
     const isTransparent = settings?.["window:transparent"] === true;
+    const needsCustomControls = useMemo(
+        () => globalThis.api?.needsCustomWindowControls?.() ?? false,
+        []
+    );
 
     const dragStateRef = useRef<{
         startX: number;
@@ -95,7 +99,7 @@ const WindowResizeHandles = () => {
         };
     }, [handleMouseMove, handleMouseUp]);
 
-    if (!isWin32 || !isTransparent) return null;
+    if (!isWin32 || !isTransparent || !needsCustomControls) return null;
 
     return (
         <>

@@ -6,6 +6,7 @@ import { RpcApi } from "@/app/store/wshclientapi";
 import { fireAndForget } from "@/util/util";
 import { BaseWindow, BaseWindowConstructorOptions, dialog, globalShortcut, ipcMain, screen } from "electron";
 import { globalEvents } from "emain/emain-events";
+import fs from "fs";
 import path from "path";
 import { debounce } from "throttle-debounce";
 import {
@@ -135,6 +136,96 @@ function isNonEmptyUnsavedWorkspace(workspace: Workspace): boolean {
     return !workspace.name && !workspace.icon && (workspace.tabids?.length > 1 || workspace.pinnedtabids?.length > 1);
 }
 
+// ============================================================
+// FancyZones Zone Detection — enables snap-resize for transparent windows
+// When FancyZones moves the window into a zone but fails to resize
+// (due to WS_EX_LAYERED), we detect the position jump and complete
+// the resize ourselves using Electron's setBounds().
+// ============================================================
+
+interface FancyZone {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+function getFancyZonesConfigDir(): string | null {
+    try {
+        const localAppData = process.env.LOCALAPPDATA;
+        if (!localAppData) return null;
+        return path.join(localAppData, "Microsoft", "PowerToys", "FancyZones");
+    } catch {
+        return null;
+    }
+}
+
+function readAndComputeFancyZones(allDisplays: Electron.Display[]): FancyZone[] | null {
+    const configDir = getFancyZonesConfigDir();
+    if (!configDir) return null;
+
+    try {
+        const customPath = path.join(configDir, "custom-layouts.json");
+        if (!fs.existsSync(customPath)) return null;
+
+        const raw = fs.readFileSync(customPath, "utf-8");
+        const data = JSON.parse(raw);
+        const layouts = data["custom-layouts"];
+        if (!Array.isArray(layouts) || layouts.length === 0) return null;
+
+        const zones: FancyZone[] = [];
+        for (const layout of layouts) {
+            const info = layout?.info;
+            if (!info?.zones) continue;
+
+            const refW: number = info["ref-width"] || 1920;
+            const refH: number = info["ref-height"] || 1080;
+
+            for (const display of allDisplays) {
+                const bounds = display.workArea;
+                const scaleX = bounds.width / refW;
+                const scaleY = bounds.height / refH;
+
+                for (const z of info.zones) {
+                    if (
+                        typeof z.X !== "number" ||
+                        typeof z.Y !== "number" ||
+                        typeof z.width !== "number" ||
+                        typeof z.height !== "number"
+                    ) {
+                        continue;
+                    }
+
+                    zones.push({
+                        x: Math.round(bounds.x + z.X * scaleX),
+                        y: Math.round(bounds.y + z.Y * scaleY),
+                        width: Math.round(z.width * scaleX),
+                        height: Math.round(z.height * scaleY),
+                    });
+                }
+            }
+        }
+
+        return zones.length > 0 ? zones : null;
+    } catch {
+        return null;
+    }
+}
+
+function findZoneAt(
+    winX: number,
+    winY: number,
+    zones: FancyZone[],
+    tolerance: number
+): FancyZone | null {
+    for (const zone of zones) {
+        if (Math.abs(zone.x - winX) <= tolerance && Math.abs(zone.y - winY) <= tolerance) {
+            return zone;
+        }
+    }
+    return null;
+}
+
 export class WaveBrowserWindow extends BaseWindow {
     waveWindowId: string;
     workspaceId: string;
@@ -146,9 +237,118 @@ export class WaveBrowserWindow extends BaseWindow {
     private actionQueue: WindowActionQueueEntry[];
     private fullScreenF11FallbackRegistered: boolean;
     private isWaveFullScreen: boolean = false;
+    private usesCustomControls: boolean = false;
 
     toggleWaveFullScreen(): void {
         this.setFullScreen(!this.isWaveFullScreen);
+    }
+
+    needsCustomWindowControls(): boolean {
+        return this.usesCustomControls;
+    }
+
+    private setupFancyZonesSnapResize(): void {
+        let lastBounds = this.getBounds();
+        let snapTimer: ReturnType<typeof setTimeout> | null = null;
+
+        this.on("move", () => {
+            if (this.isDestroyed()) return;
+            if (this.fullScreen) return;
+
+            const cur = this.getBounds();
+            const dx = Math.abs(cur.x - lastBounds.x);
+            const dy = Math.abs(cur.y - lastBounds.y);
+            const dw = Math.abs(cur.width - lastBounds.width);
+            const dh = Math.abs(cur.height - lastBounds.height);
+
+            // FancyZones snap signature: large position jump + size unchanged
+            const isSnapJump = (dx > 40 || dy > 40) && dw <= 5 && dh <= 5;
+
+            if (isSnapJump) {
+                if (snapTimer) clearTimeout(snapTimer);
+                snapTimer = setTimeout(() => {
+                    if (!this.isDestroyed()) {
+                        this.trySnapResize();
+                    }
+                }, 250);
+            }
+
+            lastBounds = cur;
+        });
+    }
+
+    private trySnapResize(): void {
+        const bounds = this.getBounds();
+        const allDisplays = screen.getAllDisplays();
+
+        const customZones = readAndComputeFancyZones(allDisplays);
+        if (customZones) {
+            const matched = findZoneAt(bounds.x, bounds.y, customZones, 15);
+            if (matched) {
+                const dw = Math.abs(matched.width - bounds.width);
+                const dh = Math.abs(matched.height - bounds.height);
+                if (dw > 20 || dh > 20) {
+                    console.log(
+                        `FancyZones snap-resize: zone (${matched.x},${matched.y}) ` +
+                            `${matched.width}x${matched.height} (was ${bounds.width}x${bounds.height})`
+                    );
+                    this.setBounds({
+                        x: matched.x,
+                        y: matched.y,
+                        width: matched.width,
+                        height: matched.height,
+                    });
+                }
+                return;
+            }
+        }
+
+        const display = screen.getDisplayNearestPoint({ x: bounds.x, y: bounds.y });
+        const wa = display.workArea;
+        const relX = bounds.x - wa.x;
+        const relY = bounds.y - wa.y;
+
+        const gridCols = [2, 3];
+        const gridRows = [2, 3];
+
+        let bestZone: { x: number; y: number; width: number; height: number } | null = null;
+        let bestDist = Infinity;
+
+        for (const cols of gridCols) {
+            const colW = Math.floor(wa.width / cols);
+            for (let c = 0; c < cols; c++) {
+                const zx = wa.x + c * colW;
+                const dx = Math.abs(relX - c * colW);
+                if (dx > 20) continue;
+                const zw = c === cols - 1 ? wa.x + wa.width - zx : colW;
+                if (Math.abs(zw - bounds.width) <= 20) continue;
+
+                for (const rows of gridRows) {
+                    const rowH = Math.floor(wa.height / rows);
+                    for (let r = 0; r < rows; r++) {
+                        const zy = wa.y + r * rowH;
+                        const dy = Math.abs(relY - r * rowH);
+                        if (dy > 20) continue;
+                        const zh = r === rows - 1 ? wa.y + wa.height - zy : rowH;
+                        if (Math.abs(zh - bounds.height) <= 20) continue;
+
+                        const dist = dx + dy;
+                        if (dist < bestDist) {
+                            bestDist = dist;
+                            bestZone = { x: zx, y: zy, width: zw, height: zh };
+                        }
+                    }
+                }
+            }
+        }
+
+        if (bestZone) {
+            console.log(
+                `FancyZones snap-resize (heuristic): ` +
+                    `${bestZone.width}x${bestZone.height} (was ${bounds.width}x${bounds.height})`
+            );
+            this.setBounds(bestZone);
+        }
     }
 
     constructor(waveWindow: WaveWindow, fullConfig: FullConfigType, opts: WindowOpts) {
@@ -168,6 +368,7 @@ export class WaveBrowserWindow extends BaseWindow {
 
         const isTransparent = settings?.["window:transparent"] ?? false;
         const isBlur = !isTransparent && (settings?.["window:blur"] ?? false);
+        let needsCustomControls = false;
 
         if (opts.unamePlatform === "darwin") {
             winOpts.titleBarStyle = "hiddenInset";
@@ -197,11 +398,12 @@ export class WaveBrowserWindow extends BaseWindow {
             winOpts.titleBarStyle = "hidden";
             if (isTransparent) {
                 winOpts.titleBarOverlay = false;
+                winOpts.transparent = true;
+                needsCustomControls = true;
                 winOpts.resizable = true;
                 winOpts.minimizable = true;
                 winOpts.maximizable = true;
                 winOpts.thickFrame = true;
-                winOpts.transparent = true;
             } else if (isBlur) {
                 winOpts.titleBarOverlay = {
                     color: "#222222",
@@ -220,6 +422,11 @@ export class WaveBrowserWindow extends BaseWindow {
         }
 
         super(winOpts);
+
+        this.usesCustomControls = needsCustomControls;
+        if (needsCustomControls) {
+            this.setupFancyZonesSnapResize();
+        }
 
         if (opts.unamePlatform === "win32") {
             this.setMenu(null);

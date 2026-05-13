@@ -143,6 +143,7 @@ declare global {
         setBuilderWindowAppId: (appId: string) => void; // set-builder-window-appid
         getTransparentWindowBounds: () => Electron.Rectangle | null; // get-transparent-window-bounds
         resizeTransparentWindow: (bounds: Electron.Rectangle) => void; // resize-transparent-window
+        needsCustomWindowControls: () => boolean; // needs-custom-window-controls
         doRefresh: () => void; // do-refresh
     };
 

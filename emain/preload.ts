@@ -85,6 +85,7 @@ contextBridge.exposeInMainWorld("api", {
     setBuilderWindowAppId: (appId: string) => ipcRenderer.send("set-builder-window-appid", appId),
     getTransparentWindowBounds: () => ipcRenderer.sendSync("get-transparent-window-bounds"),
     resizeTransparentWindow: (bounds: Electron.Rectangle) => ipcRenderer.send("resize-transparent-window", bounds),
+    needsCustomWindowControls: () => ipcRenderer.sendSync("needs-custom-window-controls"),
     doRefresh: () => ipcRenderer.send("do-refresh"),
 });
 

@@ -1,6 +1,6 @@
 import { atoms } from "@/store/global";
 import { useAtomValue } from "jotai";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const MinimizeIcon = () => (
     <svg width="10" height="10" viewBox="0 0 10 10">
@@ -53,13 +53,19 @@ const btnBase = {
 export function WindowTitleControls() {
     const settings = useAtomValue(atoms.settingsAtom);
     const isTransparent = settings?.["window:transparent"] === true;
+    const needsCustomControls = useMemo(
+        () => globalThis.api?.needsCustomWindowControls?.() ?? false,
+        []
+    );
     const [isMaximized, setIsMaximized] = useState(false);
     const [hoverMin, setHoverMin] = useState(false);
     const [hoverMax, setHoverMax] = useState(false);
     const [hoverClose, setHoverClose] = useState(false);
 
+    const shouldRender = globalThis.api?.getPlatform?.() === "win32" && isTransparent && needsCustomControls;
+
     useEffect(() => {
-        if (globalThis.api?.getPlatform?.() !== "win32" || !isTransparent) return;
+        if (!shouldRender) return;
         const check = () => {
             if (globalThis.api?.isMaximized) {
                 globalThis.api.isMaximized().then(setIsMaximized);
@@ -68,9 +74,9 @@ export function WindowTitleControls() {
         check();
         const id = setInterval(check, 500);
         return () => clearInterval(id);
-    }, [isTransparent]);
+    }, [shouldRender]);
 
-    if (globalThis.api?.getPlatform?.() !== "win32" || !isTransparent) return null;
+    if (!shouldRender) return null;
 
     const handleMinimize = () => globalThis.api?.minimizeWindow?.();
     const handleMaximize = () => {

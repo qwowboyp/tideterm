@@ -357,6 +357,11 @@ export function initIpcHandlers() {
         }
     });
 
+    electron.ipcMain.on("needs-custom-window-controls", (event) => {
+        const ww = getWaveWindowByWebContentsId(event.sender.id);
+        event.returnValue = ww ? ww.needsCustomWindowControls() : false;
+    });
+
     electron.ipcMain.on("quicklook", (event, filePath: string) => {
         if (unamePlatform !== "darwin") return;
         child_process.execFile("/usr/bin/qlmanage", ["-p", filePath], (error, stdout, stderr) => {
