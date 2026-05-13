@@ -94,10 +94,13 @@ func (sc *ShellController) Start(ctx context.Context, blockMeta waveobj.MetaMapT
 }
 
 func (sc *ShellController) Stop(graceful bool, newStatus string) error {
+	log.Printf("[shellproc] ShellController.Stop entry block=%s graceful=%v newStatus=%q procStatus=%q hasShellProc=%v\n",
+		sc.BlockId, graceful, newStatus, sc.ProcStatus, sc.ShellProc != nil)
 	sc.Lock.Lock()
 	defer sc.Lock.Unlock()
 
 	if sc.ShellProc == nil || sc.ProcStatus == Status_Done || sc.ProcStatus == Status_Init {
+		log.Printf("[shellproc] ShellController.Stop no active proc block=%s procStatus=%q newStatus=%q\n", sc.BlockId, sc.ProcStatus, newStatus)
 		if newStatus != sc.ProcStatus {
 			sc.ProcStatus = newStatus
 			sc.sendUpdate_nolock()
@@ -105,17 +108,21 @@ func (sc *ShellController) Stop(graceful bool, newStatus string) error {
 		return nil
 	}
 
+	log.Printf("[shellproc] ShellController.Stop closing shellproc block=%s graceful=%v newStatus=%q\n", sc.BlockId, graceful, newStatus)
 	sc.ShellProc.Close()
 	if graceful {
 		doneCh := sc.ShellProc.DoneCh
 		sc.Lock.Unlock() // Unlock before waiting
+		log.Printf("[shellproc] ShellController.Stop waiting graceful block=%s\n", sc.BlockId)
 		<-doneCh
+		log.Printf("[shellproc] ShellController.Stop graceful wait done block=%s\n", sc.BlockId)
 		sc.Lock.Lock() // Re-lock after waiting
 	}
 
 	// Update status
 	sc.ProcStatus = newStatus
 	sc.sendUpdate_nolock()
+	log.Printf("[shellproc] ShellController.Stop exit block=%s newStatus=%q\n", sc.BlockId, newStatus)
 	return nil
 }
 
@@ -520,21 +527,6 @@ func (bc *ShellController) manageRunningShellProcess(shellProc *shellexec.ShellP
 		}()
 		defer func() {
 			log.Printf("[shellproc] pty-read loop done\n")
-			shellProc.Close()
-			bc.WithLock(func() {
-				// so no other events are sent
-				bc.ShellInputCh = nil
-			})
-			shellProc.Cmd.Wait()
-			exitCode := shellProc.Cmd.ExitCode()
-			blockData := bc.getBlockData_noErr()
-			if blockData != nil && blockData.Meta.GetString(waveobj.MetaKey_Controller, "") == BlockController_Cmd {
-				termMsg := fmt.Sprintf("\r\nprocess finished with exit code = %d\r\n\r\n", exitCode)
-				HandleAppendBlockFile(bc.BlockId, wavebase.BlockFile_Term, []byte(termMsg))
-			}
-			// to stop the inputCh loop
-			time.Sleep(100 * time.Millisecond)
-			close(shellInputCh) // don't use bc.ShellInputCh (it's nil)
 		}()
 		buf := make([]byte, 4096)
 		for {
@@ -546,10 +538,13 @@ func (bc *ShellController) manageRunningShellProcess(shellProc *shellexec.ShellP
 				}
 			}
 			if err == io.EOF {
+				done, waitErr := shellProc.WaitNB()
+				log.Printf("[shellproc] pty-read loop received EOF block=%s waitDone=%v waitErr=%v\n", bc.BlockId, done, waitErr)
 				break
 			}
 			if err != nil {
-				log.Printf("error reading from shell: %v\n", err)
+				done, waitErr := shellProc.WaitNB()
+				log.Printf("[shellproc] error reading from shell block=%s waitDone=%v waitErr=%v err=%v\n", bc.BlockId, done, waitErr, err)
 				break
 			}
 		}
@@ -589,6 +584,19 @@ func (bc *ShellController) manageRunningShellProcess(shellProc *shellexec.ShellP
 		// wait for the shell to finish
 		var exitCode int
 		defer func() {
+			blockData := bc.getBlockData_noErr()
+			if blockData != nil && blockData.Meta.GetString(waveobj.MetaKey_Controller, "") == BlockController_Cmd {
+				termMsg := fmt.Sprintf("\r\nprocess finished with exit code = %d\r\n\r\n", exitCode)
+				HandleAppendBlockFile(bc.BlockId, wavebase.BlockFile_Term, []byte(termMsg))
+			}
+			bc.WithLock(func() {
+				if bc.ShellInputCh == shellInputCh {
+					bc.ShellInputCh = nil
+				}
+			})
+			// to stop the inputCh loop
+			time.Sleep(100 * time.Millisecond)
+			close(shellInputCh) // don't use bc.ShellInputCh (it may be updated)
 			wshutil.DefaultRouter.UnregisterRoute(wshutil.MakeControllerRouteId(bc.BlockId))
 			bc.UpdateControllerAndSendUpdate(func() bool {
 				if bc.ProcStatus == Status_Running {
@@ -601,6 +609,7 @@ func (bc *ShellController) manageRunningShellProcess(shellProc *shellexec.ShellP
 		}()
 		waitErr := shellProc.Cmd.Wait()
 		exitCode = shellProc.Cmd.ExitCode()
+		log.Printf("[shellproc] shell wait returned block=%s waitErr=%v exitCode=%d exitCodeHex=0x%08x\n", bc.BlockId, waitErr, exitCode, uint32(exitCode))
 		shellProc.SetWaitErrorAndSignalDone(waitErr)
 		go checkCloseOnExit(bc.BlockId, exitCode)
 	}()

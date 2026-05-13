@@ -93,6 +93,7 @@ func registerController(blockId string, controller Controller) {
 	registryLock.Unlock()
 
 	if existingController != nil {
+		log.Printf("[shellproc] registerController stopping existing controller block=%s\n", blockId)
 		existingController.Stop(false, Status_Done)
 		wstore.DeleteRTInfo(waveobj.MakeORef(waveobj.OType_Block, blockId))
 	}
@@ -240,8 +241,10 @@ func GetBlockControllerRuntimeStatus(blockId string) *BlockControllerRuntimeStat
 }
 
 func StopBlockController(blockId string) {
+	log.Printf("[shellproc] StopBlockController block=%s\n", blockId)
 	controller := getController(blockId)
 	if controller == nil {
+		log.Printf("[shellproc] StopBlockController no controller block=%s\n", blockId)
 		return
 	}
 	controller.Stop(true, Status_Done)
@@ -249,8 +252,10 @@ func StopBlockController(blockId string) {
 }
 
 func StopBlockControllerAndSetStatus(blockId string, newStatus string) {
+	log.Printf("[shellproc] StopBlockControllerAndSetStatus block=%s newStatus=%q\n", blockId, newStatus)
 	controller := getController(blockId)
 	if controller == nil {
+		log.Printf("[shellproc] StopBlockControllerAndSetStatus no controller block=%s newStatus=%q\n", blockId, newStatus)
 		return
 	}
 	controller.Stop(true, newStatus)
@@ -270,6 +275,7 @@ func StopAllBlockControllers() {
 	for blockId, controller := range controllers {
 		status := controller.GetRuntimeStatus()
 		if status != nil && status.ShellProcStatus == Status_Running {
+			log.Printf("[shellproc] StopAllBlockControllers stopping block=%s status=%#v\n", blockId, status)
 			go func(id string, c Controller) {
 				c.Stop(true, Status_Done)
 				wstore.DeleteRTInfo(waveobj.MakeORef(waveobj.OType_Block, id))

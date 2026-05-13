@@ -56,12 +56,15 @@ type ShellProc struct {
 }
 
 func (sp *ShellProc) Close() {
+	log.Printf("[shellproc] ShellProc.Close entry conn=%q doneAlready=%v\n", sp.ConnName, isClosedChan(sp.DoneCh))
 	sp.Cmd.KillGraceful(DefaultGracefulKillWait)
 	go func() {
 		defer func() {
 			panichandler.PanicHandler("ShellProc.Close", recover())
 		}()
+		log.Printf("[shellproc] ShellProc.Close wait goroutine waiting conn=%q\n", sp.ConnName)
 		waitErr := sp.Cmd.Wait()
+		log.Printf("[shellproc] ShellProc.Close wait goroutine returned conn=%q waitErr=%v\n", sp.ConnName, waitErr)
 		sp.SetWaitErrorAndSignalDone(waitErr)
 
 		// windows cannot handle the pty being
@@ -75,9 +78,19 @@ func (sp *ShellProc) Close() {
 
 func (sp *ShellProc) SetWaitErrorAndSignalDone(waitErr error) {
 	sp.CloseOnce.Do(func() {
+		log.Printf("[shellproc] ShellProc done signaled conn=%q waitErr=%v\n", sp.ConnName, waitErr)
 		sp.WaitErr = waitErr
 		close(sp.DoneCh)
 	})
+}
+
+func isClosedChan(ch chan any) bool {
+	select {
+	case <-ch:
+		return true
+	default:
+		return false
+	}
 }
 
 func (sp *ShellProc) Wait() error {
@@ -881,10 +894,16 @@ func StartLocalShellProc(logCtx context.Context, termSize waveobj.TermSize, cmdS
 	if termSize.Rows <= 0 || termSize.Cols <= 0 {
 		return nil, fmt.Errorf("invalid term size: %v", termSize)
 	}
+	log.Printf("[shellproc] starting local shell conn=%q shell=%q shellType=%q opts=%q cwd=%q cmdStrSet=%v termSize=%dx%d\n",
+		connName, shellPath, shellType, shellOpts, ecmd.Dir, cmdStr != "", termSize.Cols, termSize.Rows)
 	shellutil.AddTokenSwapEntry(cmdOpts.SwapToken)
 	cmdPty, err := pty.StartWithSize(ecmd, &pty.Winsize{Rows: uint16(termSize.Rows), Cols: uint16(termSize.Cols)})
 	if err != nil {
+		log.Printf("[shellproc] local shell start failed shell=%q opts=%q err=%v\n", shellPath, shellOpts, err)
 		return nil, err
+	}
+	if ecmd.Process != nil {
+		log.Printf("[shellproc] local shell started pid=%d shell=%q shellType=%q\n", ecmd.Process.Pid, shellPath, shellType)
 	}
 	cmdWrap := MakeCmdWrap(ecmd, cmdPty)
 	return &ShellProc{Cmd: cmdWrap, ConnName: connName, CloseOnce: &sync.Once{}, DoneCh: make(chan any)}, nil

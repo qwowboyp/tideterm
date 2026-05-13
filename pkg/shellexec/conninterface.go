@@ -5,6 +5,7 @@ package shellexec
 
 import (
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"runtime"
@@ -47,13 +48,25 @@ func MakeCmdWrap(cmd *exec.Cmd, cmdPty pty.Pty) CmdWrap {
 }
 
 func (cw CmdWrap) Kill() {
+	pid := -1
+	if cw.Cmd.Process != nil {
+		pid = cw.Cmd.Process.Pid
+	}
+	log.Printf("[shellproc] CmdWrap.Kill pid=%d processState=%v\n", pid, cw.Cmd.ProcessState)
 	cw.Cmd.Process.Kill()
 }
 
 func (cw CmdWrap) Wait() error {
+	pid := -1
+	if cw.Cmd.Process != nil {
+		pid = cw.Cmd.Process.Pid
+	}
+	log.Printf("[shellproc] CmdWrap.Wait entry pid=%d processState=%v\n", pid, cw.Cmd.ProcessState)
 	cw.WaitOnce.Do(func() {
 		cw.WaitErr = cw.Cmd.Wait()
+		log.Printf("[shellproc] CmdWrap.Wait inner returned pid=%d waitErr=%v processState=%v\n", pid, cw.WaitErr, cw.Cmd.ProcessState)
 	})
+	log.Printf("[shellproc] CmdWrap.Wait exit pid=%d waitErr=%v processState=%v\n", pid, cw.WaitErr, cw.Cmd.ProcessState)
 	return cw.WaitErr
 }
 
@@ -68,15 +81,21 @@ func (cw CmdWrap) ExitCode() int {
 
 func (cw CmdWrap) KillGraceful(timeout time.Duration) {
 	if cw.Cmd.Process == nil {
+		log.Printf("[shellproc] CmdWrap.KillGraceful skipped nil process timeout=%v\n", timeout)
 		return
 	}
+	pid := cw.Cmd.Process.Pid
 	if cw.Cmd.ProcessState != nil && cw.Cmd.ProcessState.Exited() {
+		log.Printf("[shellproc] CmdWrap.KillGraceful skipped exited pid=%d processState=%v timeout=%v\n", pid, cw.Cmd.ProcessState, timeout)
 		return
 	}
+	log.Printf("[shellproc] CmdWrap.KillGraceful signaling pid=%d runtime=%s timeout=%v processState=%v\n", pid, runtime.GOOS, timeout, cw.Cmd.ProcessState)
 	if runtime.GOOS == "windows" {
-		cw.Cmd.Process.Signal(os.Interrupt)
+		err := cw.Cmd.Process.Signal(os.Interrupt)
+		log.Printf("[shellproc] CmdWrap.KillGraceful os.Interrupt pid=%d err=%v\n", pid, err)
 	} else {
-		cw.Cmd.Process.Signal(syscall.SIGTERM)
+		err := cw.Cmd.Process.Signal(syscall.SIGTERM)
+		log.Printf("[shellproc] CmdWrap.KillGraceful SIGTERM pid=%d err=%v\n", pid, err)
 	}
 	go func() {
 		defer func() {
@@ -84,7 +103,9 @@ func (cw CmdWrap) KillGraceful(timeout time.Duration) {
 		}()
 		time.Sleep(timeout)
 		if cw.Cmd.ProcessState == nil || !cw.Cmd.ProcessState.Exited() {
-			cw.Cmd.Process.Kill() // force kill if it is already not exited
+			log.Printf("[shellproc] CmdWrap.KillGraceful force kill pid=%d processState=%v\n", pid, cw.Cmd.ProcessState)
+			err := cw.Cmd.Process.Kill() // force kill if it is already not exited
+			log.Printf("[shellproc] CmdWrap.KillGraceful force kill returned pid=%d err=%v\n", pid, err)
 		}
 	}()
 }
@@ -113,8 +134,14 @@ func (cw CmdWrap) StderrPipe() (io.ReadCloser, error) {
 }
 
 func (cw CmdWrap) SetSize(w int, h int) error {
+	pid := -1
+	if cw.Cmd.Process != nil {
+		pid = cw.Cmd.Process.Pid
+	}
+	log.Printf("[shellproc] CmdWrap.SetSize pid=%d rows=%d cols=%d processState=%v\n", pid, w, h, cw.Cmd.ProcessState)
 	err := pty.Setsize(cw.Pty, &pty.Winsize{Rows: uint16(w), Cols: uint16(h)})
 	if err != nil {
+		log.Printf("[shellproc] CmdWrap.SetSize failed pid=%d rows=%d cols=%d err=%v\n", pid, w, h, err)
 		return err
 	}
 	return nil
