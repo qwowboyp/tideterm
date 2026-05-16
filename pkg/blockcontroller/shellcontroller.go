@@ -537,11 +537,55 @@ func (bc *ShellController) manageRunningShellProcess(shellProc *shellexec.ShellP
 					log.Printf("error appending to blockfile: %v\n", err)
 				}
 			}
-			if err == io.EOF {
-				done, waitErr := shellProc.WaitNB()
-				log.Printf("[shellproc] pty-read loop received EOF block=%s waitDone=%v waitErr=%v\n", bc.BlockId, done, waitErr)
-				break
+		if err == io.EOF {
+			done, waitErr := shellProc.WaitNB()
+			log.Printf("[shellproc] pty-read loop received EOF block=%s waitDone=%v waitErr=%v\n", bc.BlockId, done, waitErr)
+			var resetBuf bytes.Buffer
+			resetBuf.WriteString("\x1b[?1049l")
+			resetBuf.WriteString("\x1b[0m")
+			resetBuf.WriteString("\x1b[?25h")
+			resetBuf.WriteString("\x1b[?1000l")
+			resetBuf.WriteString("\x1b[?1002l")
+			resetBuf.WriteString("\x1b[?1003l")
+			resetBuf.WriteString("\x1b[?1006l")
+			resetBuf.WriteString("\x1b[?1007l")
+			resetBuf.WriteString("\x1b[?2004l")
+			resetBuf.WriteString(shellutil.FormatOSC(16162, "R"))
+			resetBuf.WriteString("\r\n\r\n")
+			resetErr := HandleAppendBlockFile(bc.BlockId, wavebase.BlockFile_Term, resetBuf.Bytes())
+			log.Printf("[shellproc] wrote terminal reset sequences to blockfile block=%s err=%v\n", bc.BlockId, resetErr)
+			if !done {
+				// ConPTY output pipe EOF but pwsh is still alive.
+				// This happens when a TUI app (e.g. opencode) exits and ConPTY
+				// closes the output pipe while pwsh hasn't crashed yet.
+				// If we don't kill pwsh now, it will hang trying to write to
+				// the dead ConPTY pipe and eventually crash (0x80131623).
+				// Kill immediately and auto-restart the shell.
+				log.Printf("[shellproc] PTY EOF but process still alive, killing and auto-restarting block=%s\n", bc.BlockId)
+				shellProc.Cmd.Kill()
+				bc.UpdateControllerAndSendUpdate(func() bool {
+					if bc.ProcStatus == Status_Running {
+						bc.ProcStatus = Status_Done
+					}
+					return true
+				})
+				// Auto-restart shell in background after a short delay
+				go func() {
+					time.Sleep(500 * time.Millisecond)
+					ctx := context.Background()
+					tabId := bc.TabId
+					blockId := bc.BlockId
+					log.Printf("[shellproc] auto-restarting shell block=%s\n", blockId)
+					err := ResyncController(ctx, tabId, blockId, nil, true)
+					if err != nil {
+						log.Printf("[shellproc] auto-restart failed block=%s err=%v\n", blockId, err)
+					} else {
+						log.Printf("[shellproc] auto-restart succeeded block=%s\n", blockId)
+					}
+				}()
 			}
+			break
+		}
 			if err != nil {
 				done, waitErr := shellProc.WaitNB()
 				log.Printf("[shellproc] error reading from shell block=%s waitDone=%v waitErr=%v err=%v\n", bc.BlockId, done, waitErr, err)
@@ -577,42 +621,45 @@ func (bc *ShellController) manageRunningShellProcess(shellProc *shellexec.ShellP
 			shellInputCh <- &BlockInputUnion{InputData: encodedMsg}
 		}
 	}()
-	go func() {
-		defer func() {
-			panichandler.PanicHandler("blockcontroller:shellproc-wait-loop", recover())
-		}()
-		// wait for the shell to finish
-		var exitCode int
-		defer func() {
-			blockData := bc.getBlockData_noErr()
-			if blockData != nil && blockData.Meta.GetString(waveobj.MetaKey_Controller, "") == BlockController_Cmd {
-				termMsg := fmt.Sprintf("\r\nprocess finished with exit code = %d\r\n\r\n", exitCode)
-				HandleAppendBlockFile(bc.BlockId, wavebase.BlockFile_Term, []byte(termMsg))
-			}
-			bc.WithLock(func() {
-				if bc.ShellInputCh == shellInputCh {
-					bc.ShellInputCh = nil
+		go func() {
+			defer func() {
+				panichandler.PanicHandler("blockcontroller:shellproc-wait-loop", recover())
+			}()
+			// wait for the shell to finish
+			var exitCode int
+			defer func() {
+				blockData := bc.getBlockData_noErr()
+				if blockData != nil && blockData.Meta.GetString(waveobj.MetaKey_Controller, "") == BlockController_Cmd {
+					termMsg := fmt.Sprintf("\r\nprocess finished with exit code = %d\r\n\r\n", exitCode)
+					HandleAppendBlockFile(bc.BlockId, wavebase.BlockFile_Term, []byte(termMsg))
 				}
-			})
-			// to stop the inputCh loop
-			time.Sleep(100 * time.Millisecond)
-			close(shellInputCh) // don't use bc.ShellInputCh (it may be updated)
-			wshutil.DefaultRouter.UnregisterRoute(wshutil.MakeControllerRouteId(bc.BlockId))
-			bc.UpdateControllerAndSendUpdate(func() bool {
-				if bc.ProcStatus == Status_Running {
-					bc.ProcStatus = Status_Done
-				}
-				bc.ProcExitCode = exitCode
-				return true
-			})
-			log.Printf("[shellproc] shell process wait loop done\n")
+				bc.WithLock(func() {
+					if bc.ShellInputCh == shellInputCh {
+						bc.ShellInputCh = nil
+					}
+				})
+				close(shellInputCh)
+				// Only update status and unregister route if this is still the active shell.
+				// A forceRestart may have already replaced shellProc with a new one.
+				bc.WithLock(func() {
+					if bc.ShellProc == shellProc {
+						wshutil.DefaultRouter.UnregisterRoute(wshutil.MakeControllerRouteId(bc.BlockId))
+						if bc.ProcStatus == Status_Running {
+							bc.ProcStatus = Status_Done
+						}
+						bc.ProcExitCode = exitCode
+						bc.StatusVersion++
+						bc.sendUpdate_nolock()
+					}
+				})
+				log.Printf("[shellproc] shell process wait loop done\n")
+			}()
+			waitErr := shellProc.Cmd.Wait()
+			exitCode = shellProc.Cmd.ExitCode()
+			log.Printf("[shellproc] shell wait returned block=%s waitErr=%v exitCode=%d exitCodeHex=0x%08x\n", bc.BlockId, waitErr, exitCode, uint32(exitCode))
+			shellProc.SetWaitErrorAndSignalDone(waitErr)
+			go checkCloseOnExit(bc.BlockId, exitCode)
 		}()
-		waitErr := shellProc.Cmd.Wait()
-		exitCode = shellProc.Cmd.ExitCode()
-		log.Printf("[shellproc] shell wait returned block=%s waitErr=%v exitCode=%d exitCodeHex=0x%08x\n", bc.BlockId, waitErr, exitCode, uint32(exitCode))
-		shellProc.SetWaitErrorAndSignalDone(waitErr)
-		go checkCloseOnExit(bc.BlockId, exitCode)
-	}()
 	return nil
 }
 
