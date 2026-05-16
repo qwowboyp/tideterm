@@ -573,15 +573,15 @@ export class TermViewModel implements ViewModel {
 
     resetTerminalOnExit() {
         const terminal = this.termRef.current?.terminal;
-        console.log("[conpty-fix] resetTerminalOnExit called, terminal exists:", !!terminal);
         if (!terminal) {
             return;
         }
+        // Don't call terminal.reset() — it clears scrollback and all buffer content.
+        // For auto-restart cases, the new shell output will overwrite naturally.
+        // Only write a visual separator for cases where restart doesn't happen.
         setTimeout(() => {
-            console.log("[conpty-fix] terminal.reset() executing, buffer was:", terminal.buffer.active.type);
-            terminal.reset();
-            terminal.write("\r\n[Process exited]\r\n");
-        }, 300);
+            terminal.write("\r\n\x1b[?1049l\x1b[0m\x1b[?25h\x1b[?2004l\r\n[Process exited]\r\n");
+        }, 100);
     }
 
     getVDomModel(): VDomModel {
