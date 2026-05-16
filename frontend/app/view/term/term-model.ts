@@ -562,8 +562,26 @@ export class TermViewModel implements ViewModel {
         }
         const curStatus = globalStore.get(this.shellProcFullStatus);
         if (curStatus == null || curStatus.version < fullStatus.version) {
+            const prevProcStatus = curStatus?.shellprocstatus;
+            console.log("[conpty-fix] status transition:", prevProcStatus, "->", fullStatus.shellprocstatus, "version:", curStatus?.version, "->", fullStatus.version);
             globalStore.set(this.shellProcFullStatus, fullStatus);
+            if (prevProcStatus === "running" && fullStatus.shellprocstatus === "done") {
+                this.resetTerminalOnExit();
+            }
         }
+    }
+
+    resetTerminalOnExit() {
+        const terminal = this.termRef.current?.terminal;
+        console.log("[conpty-fix] resetTerminalOnExit called, terminal exists:", !!terminal);
+        if (!terminal) {
+            return;
+        }
+        setTimeout(() => {
+            console.log("[conpty-fix] terminal.reset() executing, buffer was:", terminal.buffer.active.type);
+            terminal.reset();
+            terminal.write("\r\n[Process exited]\r\n");
+        }, 300);
     }
 
     getVDomModel(): VDomModel {
