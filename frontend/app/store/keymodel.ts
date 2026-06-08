@@ -519,19 +519,19 @@ function countTermBlocks(): number {
 }
 
 function registerGlobalKeys() {
-    globalKeyMap.set("Cmd:]", () => {
+    globalKeyMap.set("Cmd:ArrowRight", () => {
         switchTab(1);
         return true;
     });
-    globalKeyMap.set("Shift:Cmd:]", () => {
+    globalKeyMap.set("Shift:Cmd:ArrowRight", () => {
         switchTab(1);
         return true;
     });
-    globalKeyMap.set("Cmd:[", () => {
+    globalKeyMap.set("Cmd:ArrowLeft", () => {
         switchTab(-1);
         return true;
     });
-    globalKeyMap.set("Shift:Cmd:[", () => {
+    globalKeyMap.set("Shift:Cmd:ArrowLeft", () => {
         switchTab(-1);
         return true;
     });
